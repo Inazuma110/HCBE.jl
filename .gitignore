@@ -1,0 +1,10 @@
+*.ipynb_checkpoints/
+*.txt
+*.dat
+*.jld2
+facebook/
+*.blbl
+*image/
+jl/cookpad.ipynb
+jl/youtube.ipynb
+jl/julia_cluster.ipynb

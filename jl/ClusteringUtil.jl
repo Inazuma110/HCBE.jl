@@ -1,0 +1,217 @@
+using Pkg, SimpleHypergraphs, Random,  ProgressBars, Plots, LightGraphs, ProgressMeter
+include("./Unionfind.jl")
+
+mutable struct edge
+  from::Int
+  to::Int
+  weight::Float64
+end
+
+function edge_comp(a::edge, b::edge)
+  if a.weight == b.weight
+    if a.from == b.from return a.to < b.to end
+    return a.from < b.from
+  end
+  return a.weight < b.weight
+end
+
+function gini(h::Hypergraph, cluster_dict)
+  k = 0
+  sum = 0
+  for (key, val) in cluster_dict
+    k += val
+    sum += key * val
+  end
+  if k == 1 return (1, 1) end
+
+  gini = 0
+
+  for (i, val1) in cluster_dict
+    for (j, val2) in cluster_dict
+      gini += abs(i - j) * (val1 * val2)
+    end
+  end
+  gini /= 2
+
+  gini = (gini / binomial(k, 2)) / (sum / k)
+  gini /= 2
+
+  return (gini, k)
+end
+
+function gini2(h::Hypergraph, cluster_dict)
+  k = 0
+  sum = 0
+
+  for (key, val) in cluster_dict
+    if(key == 1) continue end
+    k += val
+    sum += key * val
+  end
+  if k <= 1 return (1, 1) end
+
+  gini = 0
+
+  for (i, val1) in cluster_dict
+    for (j, val2) in cluster_dict
+      if(i == 1 || j == 1) continue end
+      gini += abs(i - j) * (val1 * val2)
+    end
+  end
+  gini /= 2
+
+  gini = (gini / binomial(k, 2)) / (sum / k)
+  gini /= 2
+
+  return (gini, k)
+end
+
+function jaccard(s1, s2)::Float64
+  return length(intersect(s1, s2)) / length(union(s1, s2))
+end
+
+function simpson(s1, s2)::Float64
+  return length(intersect(s1, s2)) / min(length(s1), length(s2))
+end
+
+function dice(s1, s2)::Float64
+  return (2 * length(intersect(s1, s2))) / (length(s1) + length(s2))
+end
+
+function okapi(h::Hypergraph, he::Int, node::Int, dl_ave, k1=2.0, b=0.75)::Float64
+  tf = 1.0 / length(getvertices(h, he))
+  idf = log(((nhe(h)-length(gethyperedges(h, node)))+0.5) / (length(gethyperedges(h, node))+0.5))
+  dl = length(getvertices(h, he))
+  v = (idf * tf * (k1+1)) / ((tf * k1) * (1 - b + b * (dl/dl_ave)))
+  return v
+end
+
+function tfidf(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
+  tf = 1.0 / length(getvertices(h, he))
+  idf = log(nhe(h) / length(gethyperedges(h, node))) + 1
+  tf*idf
+end
+
+
+function partition(uf::UnionFind{Int64}, size=length(uf.parent))::Vector{Set{Int}}
+  d = Dict()
+  for (i, elem) in (enumerate(uf.parent[1:size]))
+    cluster_num = root(uf, i)
+    d[cluster_num] = get(d, cluster_num, Set())
+    push!(d[cluster_num], i)
+  end
+  d = [(length(v), Set{Int64}(v)) for (k, v) in d]
+  sort!(d, by=x->x[1], rev=true)
+  d = Vector([s for (l, s) in d])
+  # println(d)
+  return d
+end
+
+function my_mod(h, part)
+  ml = 0
+  mr = 0
+  v = 0
+  for i in 1:nhv(h)
+    v += length(gethyperedges(h, i))
+  end
+  dict = Dict([])
+  for i in 1:nhe(h)
+    dict[length(getvertices(h, i))] = get(dict, length(getvertices(h, i)), 0) + 1
+  end
+
+  # vav = 0
+  va = Dict([i => 0.0 for i in 1:length(part)])
+  for (i, cluster) in enumerate(part)
+    for node in cluster
+      va[i] += length(gethyperedges(h, node))
+      # vav += length(gethyperedges(h, node))
+    end
+    va[i] /= v
+  end
+
+  for (key, val) in dict
+    tmp = 0
+    for (key2, val2) in va
+      tmp += (val2 ^ key)
+    end
+    tmp *= val
+    mr += tmp
+  end
+
+  n2c = [-1 for i in 1:nhv(h)]
+  for (num, cluster) in enumerate(part)
+    for node in cluster
+      n2c[node] = num
+    end
+  end
+
+
+  for he_i in 1:nhe(h)
+    he = [k for (k, v) in getvertices(h, he_i)]
+    flag = true
+    fnode_cluster = n2c[he[1]]
+    for node in he
+      if n2c[node] != fnode_cluster
+        flag = false
+        break
+      end
+    end
+    if flag ml += 1 end
+    # if issubset(he, cluster) ml += 1 end
+  end
+
+  # println(ml/nhe(h))
+  (ml - mr) / nhe(h)
+end
+
+function part2is_samecluster(part)
+  node_num = sum(length.(part))
+  samecluster = Dict([i => Dict([j => 0 for j in i+1:node_num]) for i in 1:node_num])
+  # samecluster = [i => Dict(j => 0) for i in 1:node_num for j in 1:node_num]
+
+  for cluster in part
+    for n1 in cluster
+      for n2 in cluster
+        if n2 <= n1 continue end
+        samecluster[n1][n2] = true
+      end
+    end
+  end
+
+  samecluster = [samecluster[i][j] for i in 1:node_num for j in i+1:node_num]
+  return samecluster
+end
+
+function f_score(prediction, actual)
+  println(pred_samecluster)
+  for cluster in prediction
+    for i in cluster
+      for j in cluster
+        if i == j continue end
+      end
+    end
+  end
+end
+
+function build_bg(h::Hypergraph, weighted_f=okapi)
+  edges = Set()
+  dl_ave = 0
+
+  for he in 1:nhe(h)
+    dl_ave += length(getvertices(h, he))
+  end
+  dl_ave /= nhe(h)
+
+  @showprogress 1 "computing..." for node in (1:nhv(h))
+    hes = gethyperedges(h, node)
+    hes = [key for (key, val) in hes]
+    for he in hes
+      w = weighted_f(h, he, node, dl_ave)
+      # edgeはnode, edge, tfidfの構造体
+      push!(edges, edge(node, nhv(h)+he, w))
+    end
+  end
+  edges = [i for i in edges]
+  sort!(edges, rev=true, lt=edge_comp)
+  return edges
+end
