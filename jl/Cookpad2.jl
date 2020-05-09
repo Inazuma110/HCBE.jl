@@ -2,12 +2,14 @@ using Pkg
 Pkg.activate(".")
 using SimpleHypergraphs, Random, ProgressBars, Plots, JLD2
 include("HypergraphClustering.jl")
+include("ClusteringUtil.jl")
 
-function build_cookpad(fname)
+
+function build_trimcookpad(fname)
     io = open(fname, "r")
     lnum = 0
     recipe = []
-    h = Hypergraph{Int}(487568, 1712897)
+    h = Hypergraph{Int}(75874, 54812)
     recipe_dict = Dict{Int,Int}()
     for line in tqdm(eachline(io)) #for each he
         lnum += 1
@@ -30,8 +32,9 @@ function build_cookpad(fname)
 
 end
 
-@time const cookpad = build_cookpad("../ingredients_giant.blbl")
-@time dend, uf, ms, gs, ks, nvh, hevh, part = clustering3(cookpad)
+@time const trim_cookpad = build_trimcookpad("../ingredients_trim15.blbl")
+@time arr1, arr2 = h2correlation(trim_cookpad, tfidf, general_weight)
+using StatsBase
+# スピアマン ケンドール
+println(corspearman(arr1, arr2), ' ', corkendall(arr1, arr2))
 
-
-@save "cookpad_mod.jld2" dend uf ms gs ks nvh hevh part

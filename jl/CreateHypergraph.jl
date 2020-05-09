@@ -3,7 +3,7 @@ using Random, SimpleHypergraphs
 
 # clusters cluster num
 # npcs node per cluster 1つあたりの頂点数
-function create_hypergraph(clusters::Int64, npcs, hepcs, he_rate=0.5, oe_rate=10)
+function create_hypergraph(npcs, hepcs, noise_num, he_rate=0.5, noise_rate=he_rate/length(npcs))
   node_num = 0
   he_num = 0
   clusters = length(npcs)
@@ -34,11 +34,8 @@ function create_hypergraph(clusters::Int64, npcs, hepcs, he_rate=0.5, oe_rate=10
     fin_node += npc
   end
 
-  # oe = floor(he_num/oe_rate)
- oe = oe_rate
-
-  for i in 1:oe
-    he = randsubseq(1:node_num, he_rate)
+  for i in 1:noise_num
+    he = randsubseq(1:node_num, noise_rate)
     he = Dict([i => 1 for i in he])
     add_hyperedge!(h, vertices=he)
   end

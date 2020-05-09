@@ -152,7 +152,6 @@ end
 
 # Calc all param
 function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=okapi)
-  edges = Set()
   uf = UnionFind(nhv(h)+nhe(h))
   m = 0
   best_m = -1
@@ -177,22 +176,9 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   end
   dl_ave /= nhe(h)
 
-  @showprogress 1 "computing..." for node in (1:nhv(h))
-    hes = gethyperedges(h, node)
-    hes = [key for (key, val) in hes]
-    for he in hes
-      w = weighted_f(h, he, node, dl_ave)
-      # edgeはnode, edge, tfidfの構造体
-      push!(edges, edge(node, nhv(h)+he, w))
-    end
-  end
-  edges = [i for i in edges]
-  sort!(edges, rev=true, lt=edge_comp)
-  # println(edges)
-  # step, from, to
+  edges = build_bg(h, weighted_f)
   dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
 
-  println(length(edges))
 
   @showprogress 1 "computing..." for (step, edge) in enumerate(edges)
     node = edge.from
@@ -281,7 +267,6 @@ end
 
 # minimum calc
 function clustering4(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=okapi)
-  edges = Set()
   uf = UnionFind(nhv(h)+nhe(h))
   cluster_num = nhv(h)
   dl_ave = 0
@@ -289,20 +274,7 @@ function clustering4(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     dl_ave += length(gethyperedges(h, he))
   end
   dl_ave /= nhe(h)
-
-  @showprogress 1 "computing..." for node in (1:nhv(h))
-    hes = gethyperedges(h, node)
-    hes = [key for (key, val) in hes]
-    for he in hes
-      w = weighted_f(h, he, node, dl_ave)
-      # edgeはnode, edge, tfidfの構造体
-      push!(edges, edge(node, nhv(h)+he, w))
-    end
-  end
-  edges = [i for i in edges]
-  sort!(edges, rev=true, lt=edge_comp)
-  # step, from, to
-  # dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
+  edges = build_bg(h, weighted_f)
 
   @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
     node = edge.from
@@ -321,12 +293,12 @@ function clustering4(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     if cluster_num == n_cluster break end
   end
 
-  partition(uf, nhv(h))
+  return partition(uf, nhv(h))
 end
 
-function h2correlation(h::Hypergraph)
-  okapi_e = build_bg(h, okapi)
-  tfidf_e = build_bg(h, (a, b, c, d)->rand(1)[1])
+function h2correlation(h::Hypergraph, f1, f2)
+  okapi_e = build_bg(h, f1)
+  tfidf_e = build_bg(h, f2)
 
   rank1 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
   rank2 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])

@@ -352,6 +352,12 @@ git-tree-sha1 = "b34d7cef7b337321e97d22242c3c2b91f476748e"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.0"
 
+[[JSON3]]
+deps = ["Dates", "Mmap", "Parsers", "Test", "UUIDs"]
+git-tree-sha1 = "3989e277c668f2c1c9b7595a7f489510e78d3e73"
+uuid = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+version = "0.1.13"
+
 [[LaTeXStrings]]
 git-tree-sha1 = "de44b395389b84fd681394d4e8d39ef14e3a2ea8"
 uuid = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
@@ -641,10 +647,12 @@ uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "0.3.1"
 
 [[SimpleHypergraphs]]
-deps = ["LightGraphs", "Random", "Test"]
-git-tree-sha1 = "f519b6cea2fbdb0ef48bc81ac747b656105599f5"
+deps = ["Conda", "DataStructures", "JSON", "JSON3", "LightGraphs", "PyCall", "PyPlot", "Random", "StatsBase", "StructTypes", "Test"]
+git-tree-sha1 = "236700e5eb1c776d4f784e45cf9eba85cfa81b50"
+repo-rev = "master"
+repo-url = "https://github.com/pszufe/SimpleHypergraphs.jl"
 uuid = "aa4a32ff-dd5d-5357-90e3-e7a9512f0501"
-version = "0.1.6"
+version = "0.1.9"
 
 [[SimpleTraits]]
 deps = ["InteractiveUtils", "MacroTools"]
@@ -698,6 +706,12 @@ deps = ["Rmath", "SpecialFunctions"]
 git-tree-sha1 = "f290ddd5fdedeadd10e961eb3f4d3340f09d030a"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 version = "0.9.4"
+
+[[StructTypes]]
+deps = ["Dates", "UUIDs"]
+git-tree-sha1 = "1ed04f622a39d2e5a6747c3a70be040c00333933"
+uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+version = "1.1.0"
 
 [[SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]

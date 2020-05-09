@@ -88,8 +88,16 @@ end
 
 function tfidf(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
   tf = 1.0 / length(getvertices(h, he))
+
+  vertices = keys(getvertices(h, he))
+  tf = 1.0 / sum(length.(gethyperedges.(Ref(h), vertices)))
   idf = log(nhe(h) / length(gethyperedges(h, node))) + 1
-  tf*idf
+  return tf*idf
+end
+
+# TODO rename tf
+function general_weight(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
+  return 1 / length(getvertices(h, he))
 end
 
 
@@ -180,17 +188,6 @@ function part2is_samecluster(part)
 
   samecluster = [samecluster[i][j] for i in 1:node_num for j in i+1:node_num]
   return samecluster
-end
-
-function f_score(prediction, actual)
-  println(pred_samecluster)
-  for cluster in prediction
-    for i in cluster
-      for j in cluster
-        if i == j continue end
-      end
-    end
-  end
 end
 
 function build_bg(h::Hypergraph, weighted_f=okapi)
