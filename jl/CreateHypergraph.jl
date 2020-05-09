@@ -20,6 +20,7 @@ function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
   h = Hypergraph{Int64}(node_num, he_num)
   step = 1
   fin_node = 1
+  is_noises = [[false for j in 1:node_num+he_num] for i in 1:node_num+he_num]
 
   for (npc, hepc) in zip(npcs, hepcs)
     for i in 1:hepc
@@ -43,9 +44,10 @@ function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
     # println(included_num)
     included_he = randperm(nhe(h))[1:included_num]
     h[node, included_he] .= 1
+    is_noises[node][node_num.+included_he] .= true
   end
 
-  return h, training_data
+  return h, is_noises, training_data
 end
 
 function visu(cre)

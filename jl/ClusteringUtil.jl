@@ -87,7 +87,7 @@ function okapi(h::Hypergraph, he::Int, node::Int, dl_ave, k1=2.0, b=0.75)::Float
 end
 
 function tfidf(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
-  tf = 1.0 / length(getvertices(h, he))
+  # tf = 1.0 / length(getvertices(h, he))
 
   vertices = keys(getvertices(h, he))
   tf = 1.0 / sum(length.(gethyperedges.(Ref(h), vertices)))
@@ -95,7 +95,6 @@ function tfidf(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
   return tf*idf
 end
 
-# TODO rename tf
 function general_weight(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
   return 1 / length(getvertices(h, he))
 end
@@ -211,4 +210,15 @@ function build_bg(h::Hypergraph, weighted_f=okapi)
   edges = [i for i in edges]
   sort!(edges, rev=true, lt=edge_comp)
   return edges
+end
+
+function noise_order(edges, noise_indexes)
+  orders = []
+  for (i, e) in enumerate(edges)
+    node = e.from
+    he = e.to
+    if noise_indexes[node][he] push!(orders, i) end
+  end
+
+  return orders
 end
