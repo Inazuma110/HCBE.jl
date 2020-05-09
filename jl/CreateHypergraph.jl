@@ -3,7 +3,7 @@ using Random, SimpleHypergraphs
 
 # clusters cluster num
 # npcs node per cluster 1つあたりの頂点数
-function create_hypergraph(npcs, hepcs, noise_num, he_rate=0.5, noise_rate=he_rate/length(npcs))
+function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
   node_num = 0
   he_num = 0
   clusters = length(npcs)
@@ -34,13 +34,18 @@ function create_hypergraph(npcs, hepcs, noise_num, he_rate=0.5, noise_rate=he_ra
     fin_node += npc
   end
 
-  for i in 1:noise_num
-    he = randsubseq(1:node_num, noise_rate)
-    he = Dict([i => 1 for i in he])
-    add_hyperedge!(h, vertices=he)
+  for node in 1:nhv(h)
+    is_noise = rand(1)[1] <= noise_rate
+    # println(rand(1)[1])
+    if !is_noise continue end
+
+    included_num = (rand(Int64, 1)[1] % length(npcs)) + 1
+    # println(included_num)
+    included_he = randperm(nhe(h))[1:included_num]
+    h[node, included_he] .= 1
   end
 
-  h, training_data
+  return h, training_data
 end
 
 function visu(cre)
