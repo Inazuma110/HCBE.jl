@@ -223,3 +223,15 @@ function noise_order(edges, noise_indexes)
 
   return orders
 end
+
+function h2txt(h::Hypergraph, fname)
+  out = open(fname, "w")
+  print(out, nhv(h), ' ', nhe(h), '\n')
+  for he in 1:nhe(h)
+    for node in keys(getvertices(h, he))
+      print(out, node, ' ')
+    end
+    print(out, '\n')
+  end
+  close(out)
+end
