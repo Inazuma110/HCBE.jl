@@ -40,9 +40,9 @@ function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
     # println(rand(1)[1])
     if !is_noise continue end
 
-    included_num = (rand(Int64, 1)[1] % Int(floor(nhe(h) * noise_rate))) + 1
-    # println(included_num)
-    included_he = randperm(nhe(h))[1:included_num]
+    # included_num = (rand(Int64, 1)[1] % Int(floor(nhe(h) * noise_rate))) + 1
+    # included_he = randperm(nhe(h))[1:included_num]
+    included_he = randsubseq(1:nhe(h), he_rate)
     h[node, included_he] .= 1
     is_noises[node][node_num.+included_he] .= true
   end
