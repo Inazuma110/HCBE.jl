@@ -189,7 +189,7 @@ function part2is_samecluster(part)
   return samecluster
 end
 
-function build_bg(h::Hypergraph, weighted_f=okapi)
+function build_bg(h::Hypergraph, weighted_f=tfidf)
   edges = Set()
   dl_ave = 0
 
