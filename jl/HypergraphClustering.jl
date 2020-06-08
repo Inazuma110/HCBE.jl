@@ -157,7 +157,7 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   best_m = -1
   ms = []
   best_part = []
-  partition = Dict([i => Set(i) for i in 1:nhv(h)])
+  # partition = Dict([i => Set(i) for i in 1:nhv(h)])
   cluster_dict = Dict(1 => nhv(h))
   cluster_num = nhv(h)
   g = 0
@@ -180,7 +180,7 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
 
 
-  @showprogress 1 "computing..." for (step, edge) in enumerate(edges)
+  @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
     node = edge.from
     he = edge.to
     weight = edge.weight
@@ -188,62 +188,14 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     he_root = root(uf, he)
     cluster_size = size(uf, node)
 
-    if !node_visited[node]
-      node_visited[node] = true
-      node_visited_n += 1
-    end
-    if !he_visited[he-nhv(h)]
-      he_visited[he-nhv(h)] = true
-      he_visited_n += 1
-    end
-
-    push!(node_visited_hist, node_visited_n)
-    push!(he_visited_hist, he_visited_n)
-
     if !issame(uf, node, he)
       unite!(uf, node, he)
-
-      new_cluster = partition[node_root]
-
       # heのルートがnodeなら
-      if he_root <= nhv(h)
-        # 和集合
-        new_cluster = Set(union(new_cluster, partition[he_root]))
-        new_cluster_size = length(new_cluster)
-        # いい感じにクラスタの長さの辞書を変更
-        cluster_dict[length(partition[he_root])] -= 1
-        # クラスタ数が0になったらそのキーを消す
-        # ジニ係数計算時に高速化
-        if cluster_dict[length(partition[he_root])] == 0
-          delete!(cluster_dict, length(partition[he_root]))
-        end
+      if he_root <= nhv(h) cluster_num -= 1 end
 
-        # 上に同じ
-        cluster_dict[length(partition[node_root])] -= 1
-        if cluster_dict[length(partition[node_root])] == 0
-          delete!(cluster_dict, length(partition[node_root]))
-        end
-        cluster_dict[new_cluster_size] = get(cluster_dict, new_cluster_size, 0) + 1
-        cluster_num -= 1
-      end
-
-      if node_root == root(uf, node_root)
-        partition[node_root] = new_cluster
-        delete!(partition, he_root)
-      elseif he_root == root(uf, he_root)
-        partition[he_root] = new_cluster
-        delete!(partition, node_root)
-      end
-
-      if dendrogram[node_root] == (-1, -1, -1) && node_root != root(uf, node_root)
-        dendrogram[node_root] = (step, node_root, root(uf, node_root))
-      end
-      if dendrogram[he_root] == (-1, -1, -1) && he_root != root(uf, he_root)
-        dendrogram[he_root] = (step, he_root, root(uf, he_root))
-      end
-
-      g, k = gini(h, cluster_dict)
-      p = [v for (k, v) in partition]
+      p = partition(uf, nhv(h))
+      # println(p)
+      # break
       m = modularity_f(h, p)
       if m > best_m
         best_m = m
@@ -251,14 +203,9 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
       end
     end
 
-    push!(gs, g)
-    push!(ks, k)
     push!(ms, m)
 
-    if cluster_num == n_cluster
-      println(cluster_num)
-      break
-    end
+    if cluster_num == n_cluster break end
   end
   # return gs, ks, partition
   return dendrogram, uf, ms, gs, ks, node_visited_hist, he_visited_hist, best_part

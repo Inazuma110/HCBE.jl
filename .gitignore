@@ -8,3 +8,4 @@ facebook/
 jl/cookpad.ipynb
 jl/youtube.ipynb
 jl/julia_cluster.ipynb
+dataset/*

@@ -224,10 +224,22 @@ function noise_order(edges, noise_indexes)
   return orders
 end
 
+"""
+  h2txt(h::Hypergraph, fname::AbstractString)
+
+Translate hypergraph to text file. This is in the following form.
+```
+N M
+```
+N is number of hypergraph vertices.
+M is number of hypereedges.
+
+"""
 function h2txt(h::Hypergraph, fname)
   out = open(fname, "w")
   print(out, nhv(h), ' ', nhe(h), '\n')
   for he in 1:nhe(h)
+    print(out, length(getvertices(h, he)), ' ')
     for node in keys(getvertices(h, he))
       print(out, node, ' ')
     end
