@@ -247,3 +247,14 @@ function h2txt(h::Hypergraph, fname)
   end
   close(out)
 end
+
+function plot_incidence(h::Hypergraph, weighted_f=tfidf)
+  bg = build_bg(h, weighted_f)
+  plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
+  maxw = maximum([i.weight for i in bg])
+  minw = minimum([i.weight for i in bg])
+  function f(w) return (w-minw) / (maxw-minw) end
+  color = [RGB(f(i.weight), f(i.weight), f(i.weight)) for i in bg]
+  Plots.scatter(plot_arr, markersize=6, color=color)
+  # return plot_arr
+end

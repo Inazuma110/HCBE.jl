@@ -50,13 +50,3 @@ function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
   return h, is_noises, training_data
 end
 
-function visu(cre)
-  sca::Array{Tuple{Int64, Int64}} = []
-  for i in 1:nhe(cre)
-    v = [k for (k,v) in getvertices(cre, i)]
-    for j in v
-      push!(sca, (i, j))
-    end
-  end
-  sca
-end
