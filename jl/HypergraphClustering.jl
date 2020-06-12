@@ -157,19 +157,9 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   best_m = -1
   ms = []
   best_part = []
-  # partition = Dict([i => Set(i) for i in 1:nhv(h)])
+  part_hist = []
   cluster_dict = Dict(1 => nhv(h))
   cluster_num = nhv(h)
-  g = 0
-  k = 0
-  gs = []
-  ks = []
-  node_visited = [false for i in 1:nhv(h)]
-  he_visited = [false for i in 1:nhe(h)]
-  node_visited_n = 0
-  he_visited_n = 0
-  node_visited_hist = []
-  he_visited_hist = []
   dl_ave = 0
   for he in 1:nhe(h)
     dl_ave += length(gethyperedges(h, he))
@@ -178,6 +168,7 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
 
   edges = build_bg(h, weighted_f)
   dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
+  p = Set.(1:nhv(h))
 
 
   @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
@@ -194,8 +185,6 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
       if he_root <= nhv(h) cluster_num -= 1 end
 
       p = partition(uf, nhv(h))
-      # println(p)
-      # break
       m = modularity_f(h, p)
       if m > best_m
         best_m = m
@@ -204,11 +193,13 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     end
 
     push!(ms, m)
+    push!(part_hist, p)
 
     if cluster_num == n_cluster break end
   end
-  # return gs, ks, partition
-  return dendrogram, uf, ms, gs, ks, node_visited_hist, he_visited_hist, best_part
+
+  return uf, ms, best_part, part_hist
+  # return dendrogram, uf, ms, gs, ks, node_visited_hist, he_visited_hist, best_part
 end
 
 

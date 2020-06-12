@@ -99,6 +99,10 @@ function general_weight(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
   return 1.0 / length(getvertices(h, he))
 end
 
+function random_weight(h::Hypergraph=1, he=1, node=1, dl_ave=1)::Float64
+  return rand(1)[1]
+end
+
 
 function partition(uf::UnionFind{Int64}, size=length(uf.parent))::Vector{Set{Int}}
   d = Dict()
@@ -224,37 +228,29 @@ function noise_order(edges, noise_indexes)
   return orders
 end
 
-"""
-  h2txt(h::Hypergraph, fname::AbstractString)
 
-Translate hypergraph to text file. This is in the following form.
-```
-N M
-```
-N is number of hypergraph vertices.
-M is number of hypereedges.
-
-"""
-function h2txt(h::Hypergraph, fname)
-  out = open(fname, "w")
-  print(out, nhv(h), ' ', nhe(h), '\n')
-  for he in 1:nhe(h)
-    print(out, length(getvertices(h, he)), ' ')
-    for node in keys(getvertices(h, he))
-      print(out, node, ' ')
-    end
-    print(out, '\n')
-  end
-  close(out)
-end
-
-function plot_incidence(h::Hypergraph, weighted_f=tfidf)
+function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf)
+  # pyplot()
+  # gr()
   bg = build_bg(h, weighted_f)
   plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
   maxw = maximum([i.weight for i in bg])
   minw = minimum([i.weight for i in bg])
-  function f(w) return (w-minw) / (maxw-minw) end
+  f(w) = (w-minw) / (maxw-minw)
   color = [RGB(f(i.weight), f(i.weight), f(i.weight)) for i in bg]
-  Plots.scatter(plot_arr, markersize=6, color=color)
-  # return plot_arr
+  return Plots.scatter(
+                plot_arr,
+                markersize=6,
+                color=color,
+                xlabel="node",
+                ylabel="hyperedge",
+                label="",
+                title=name,
+               )
+end
+
+function scoring(tr_part, pred_part, scoring_f)
+  act_sc = part2is_samecluster(tr_part)
+  pred_sc = part2is_samecluster(pred_part)
+  return scoring_f(act_sc, pred_sc)
 end

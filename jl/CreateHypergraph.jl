@@ -50,3 +50,58 @@ function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
   return h, is_noises, training_data
 end
 
+function build_trimcookpad(fname="../ingredients_trim15.blbl")
+    io = open(fname, "r")
+    lnum = 0
+    recipe = []
+    h = Hypergraph{Int}(75874, 54812)
+    recipe_dict = Dict{Int,Int}()
+    for line in tqdm(eachline(io)) #for each he
+        lnum += 1
+        if(lnum == 1)
+            continue
+        end
+
+        line = split(line, " ")
+
+        ingredient_list = split.(line[2:end-2], ":")
+
+        for i in ingredient_list
+            ingredient = parse(Int, String(i[1]))
+            h[ingredient, lnum-1] = 1
+        end
+    end
+    close(io)
+
+    return h
+
+end
+
+
+function build_youtube(fname="../youtube_giant.blbl")
+    io = open(fname, "r")
+    lnum = 0
+    recipe = []
+    h = Hypergraph{Int}(45352, 13251)
+    recipe_dict = Dict{Int,Int}()
+    for line in tqdm(eachline(io)) #for each he
+        lnum += 1
+        if(lnum == 1)
+            continue
+        end
+
+        line = split(line, " ")
+
+        ingredient_list = split.(line[2:end-2], ":")
+
+        for i in ingredient_list
+            ingredient = parse(Int, String(i[1]))
+            h[ingredient, lnum-1] = 1
+        end
+    end
+    close(io)
+
+    return h
+
+end
+
