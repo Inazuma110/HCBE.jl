@@ -151,7 +151,7 @@ function clustering2(h::Hypergraph, indicator::Function=jaccard, order=shuffle!(
 end
 
 # Calc all param
-function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=okapi)
+function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=okapi, params=Dict())
   uf = UnionFind(nhv(h)+nhe(h))
   m = 0
   best_m = -1
@@ -165,8 +165,9 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     dl_ave += length(gethyperedges(h, he))
   end
   dl_ave /= nhe(h)
+  params["dl_ave"] = dl_ave
 
-  edges = build_bg(h, weighted_f)
+  edges = build_bg(h, weighted_f, params)
   dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
   p = Set.(1:nhv(h))
 

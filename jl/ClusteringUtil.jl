@@ -5,6 +5,7 @@ mutable struct edge
   from::Int
   to::Int
   weight::Float64
+  id::Int
 end
 
 function edge_comp(a::edge, b::edge)
@@ -78,21 +79,27 @@ function dice(s1, s2)::Float64
   return (2 * length(intersect(s1, s2))) / (length(s1) + length(s2))
 end
 
-function okapi(h::Hypergraph, he::Int, node::Int, dl_ave, k1=2.0, b=0.75)::Float64
+function okapi(h::Hypergraph, he::Int, node::Int, params=Dict("k1"=>2.0, "b"=>0.75))::Float64
   tf = 1.0 / length(getvertices(h, he))
   idf = log(((nhe(h)-length(gethyperedges(h, node)))+0.5) / (length(gethyperedges(h, node))+0.5))
   dl = length(getvertices(h, he))
+  dl_ave = params["dl_ave"]
+  k1 = haskey(params, "k1") ? params["k1"] : 2.0
+  b = haskey(params, "b") ? params["b"] : 0.75
   v = (idf * tf * (k1+1)) / ((tf * k1) * (1 - b + b * (dl/dl_ave)))
   return v
 end
 
-function tfidf(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
-  tf = 1.0 / length(getvertices(h, he))
+function tf(h::Hypergraph, he::Int, node::Int, params=Dict())
+  return 1.0 / length(getvertices(h, he))
+end
 
-  # vertices = keys(getvertices(h, he))
-  # tf = 1.0 / sum(length.(gethyperedges.(Ref(h), vertices)))
-  idf = log(nhe(h) / length(gethyperedges(h, node))) + 1
-  return tf*idf
+function idf(h::Hypergraph, he::Int, node::Int, params=Dict())
+  return log(nhe(h) / length(gethyperedges(h, node))) + 1
+end
+
+function tfidf(h::Hypergraph, he::Int, node::Int, params=Dict())::Float64
+  return tf(h, he, node) * idf(h, he, node)
 end
 
 function general_weight(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
@@ -114,7 +121,6 @@ function partition(uf::UnionFind{Int64}, size=length(uf.parent))::Vector{Set{Int
   d = [(length(v), Set{Int64}(v)) for (k, v) in d]
   sort!(d, by=x->x[1], rev=true)
   d = Vector([s for (l, s) in d])
-  # println(d)
   return d
 end
 
@@ -171,7 +177,6 @@ function my_mod(h, part)
     # if issubset(he, cluster) ml += 1 end
   end
 
-  # println(ml/nhe(h))
   (ml - mr) / nhe(h)
 end
 
@@ -193,22 +198,24 @@ function part2is_samecluster(part)
   return samecluster
 end
 
-function build_bg(h::Hypergraph, weighted_f=tfidf)
+function build_bg(h::Hypergraph, weighted_f=tfidf, params=Dict())
   edges = Set()
-  dl_ave = 0
+  params["dl_ave"] = 0
 
   for he in 1:nhe(h)
-    dl_ave += length(getvertices(h, he))
+    params["dl_ave"] += length(getvertices(h, he))
   end
-  dl_ave /= nhe(h)
+  params["dl_ave"] /= nhe(h)
 
+  id = 1
   @showprogress 1 "computing..." for node in (1:nhv(h))
     hes = gethyperedges(h, node)
     hes = [key for (key, val) in hes]
     for he in hes
-      w = weighted_f(h, he, node, dl_ave)
+      w = weighted_f(h, he, node, params)
       # edgeはnode, edge, tfidfの構造体
-      push!(edges, edge(node, nhv(h)+he, w))
+      push!(edges, edge(node, nhv(h)+he, w, id))
+      id += 1
     end
   end
   edges = [i for i in edges]
@@ -229,10 +236,10 @@ function noise_order(edges, noise_indexes)
 end
 
 
-function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf)
+function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
   # pyplot()
   # gr()
-  bg = build_bg(h, weighted_f)
+  bg = build_bg(h, weighted_f, params)
   plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
   maxw = maximum([i.weight for i in bg])
   minw = minimum([i.weight for i in bg])
@@ -241,9 +248,10 @@ function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf)
   return Plots.scatter(
                 plot_arr,
                 markersize=6,
+                markerstrokewidth=0,
                 color=color,
-                xlabel="node",
-                ylabel="hyperedge",
+                xlabel="hyperedges",
+                ylabel="node",
                 label="",
                 title=name,
                )
@@ -253,4 +261,21 @@ function scoring(tr_part, pred_part, scoring_f)
   act_sc = part2is_samecluster(tr_part)
   pred_sc = part2is_samecluster(pred_part)
   return scoring_f(act_sc, pred_sc)
+end
+
+function curve(h::Hypergraph, f1, f2, similsimilar_f=jaccard)
+  bg1 = build_bg(h, f1)
+  bg2 = build_bg(h, f2)
+  bg1 = map(i->i.id, bg1)
+  bg2 = map(i->i.id, bg2)
+  n = length(bg1)
+
+  res = []
+  for i in 1:n
+    arr1 = bg1[1:i]
+    arr2 = bg2[1:i]
+    push!(res, jaccard(arr1, arr2))
+  end
+
+  return res
 end
