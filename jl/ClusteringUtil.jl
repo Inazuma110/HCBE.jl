@@ -1,4 +1,5 @@
 using Pkg, SimpleHypergraphs, Random,  ProgressBars, Plots, LightGraphs, ProgressMeter
+using ScikitLearn
 include("./Unionfind.jl")
 
 mutable struct edge
@@ -263,18 +264,25 @@ function scoring(tr_part, pred_part, scoring_f)
   return scoring_f(act_sc, pred_sc)
 end
 
-function curve(h::Hypergraph, f1, f2, similsimilar_f=jaccard)
-  bg1 = build_bg(h, f1)
-  bg2 = build_bg(h, f2)
+function curve(h::Hypergraph, f1, f2, similar_f=f1_score, params1=Dict(), params2=Dict())
+  bg1 = build_bg(h, f1, params1)
+  bg2 = build_bg(h, f2, params2)
+  # bg1 = map(i->i.id, bg1[1:Int(floor(length(bg1)/100)):end])
+  # bg2 = map(i->i.id, bg2[1:Int(floor(length(bg1)/100)):end])
   bg1 = map(i->i.id, bg1)
   bg2 = map(i->i.id, bg2)
   n = length(bg1)
 
+  # arr1 = [0 for i in 1:n]
+  # println(length(arr1[bg1]))
   res = []
-  for i in 1:n
-    arr1 = bg1[1:i]
-    arr2 = bg2[1:i]
-    push!(res, jaccard(arr1, arr2))
+  @showprogress 1 "computing..."  for i in 1:n
+    arr1 = [0 for i in 1:n]
+    arr2 = [0 for i in 1:n]
+    arr1[bg1[1:i]] .= 1
+    arr2[bg2[1:i]] .= 1
+    # arr2 = bg2[1:i]
+    push!(res, similar_f(arr1, arr2))
   end
 
   return res

@@ -196,7 +196,11 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     push!(ms, m)
     push!(part_hist, p)
 
-    if cluster_num == n_cluster break end
+    if cluster_num <= n_cluster
+      # p = partition(uf, nhv(h))
+      # best_part = p
+      break
+    end
   end
 
   return uf, ms, best_part, part_hist
