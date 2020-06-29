@@ -17,18 +17,6 @@ function clustering(h::Hypergraph, gini_func::Function=gini, order=shuffle!([i f
     nodes = [node for node in keys(nodes)]
     if isempty(nodes) continue end
 
-    # for node in nodes
-    #   hes = gethyperedges(h, node)
-    #   if isempty(hes) continue end
-    #   fhe = hes[1]
-    #   for he in hes
-    #     if(root(euf, fhe) != root(euf, he) && he_visited[he])
-    #       unite!(euf, fhe, he)
-    #       he_visited[he] = true
-    #     end
-    #   end
-    # end
-
     first = nodes[1]
 
     for node in nodes[2:end]

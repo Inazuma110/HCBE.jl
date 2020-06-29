@@ -1,6 +1,7 @@
 using Pkg, SimpleHypergraphs, Random,  ProgressBars, Plots, LightGraphs, ProgressMeter
 using ScikitLearn
 include("./Unionfind.jl")
+include("./Weighted.jl")
 
 mutable struct edge
   from::Int
@@ -66,49 +67,6 @@ function gini2(h::Hypergraph, cluster_dict)
   gini /= 2
 
   return (gini, k)
-end
-
-function jaccard(s1, s2)::Float64
-  return length(intersect(s1, s2)) / length(union(s1, s2))
-end
-
-function simpson(s1, s2)::Float64
-  return length(intersect(s1, s2)) / min(length(s1), length(s2))
-end
-
-function dice(s1, s2)::Float64
-  return (2 * length(intersect(s1, s2))) / (length(s1) + length(s2))
-end
-
-function okapi(h::Hypergraph, he::Int, node::Int, params=Dict("k1"=>2.0, "b"=>0.75))::Float64
-  tf = 1.0 / length(getvertices(h, he))
-  idf = log(((nhe(h)-length(gethyperedges(h, node)))+0.5) / (length(gethyperedges(h, node))+0.5))
-  dl = length(getvertices(h, he))
-  dl_ave = params["dl_ave"]
-  k1 = haskey(params, "k1") ? params["k1"] : 2.0
-  b = haskey(params, "b") ? params["b"] : 0.75
-  v = (idf * tf * (k1+1)) / ((tf * k1) * (1 - b + b * (dl/dl_ave)))
-  return v
-end
-
-function tf(h::Hypergraph, he::Int, node::Int, params=Dict())
-  return 1.0 / length(getvertices(h, he))
-end
-
-function idf(h::Hypergraph, he::Int, node::Int, params=Dict())
-  return log(nhe(h) / length(gethyperedges(h, node))) + 1
-end
-
-function tfidf(h::Hypergraph, he::Int, node::Int, params=Dict())::Float64
-  return tf(h, he, node) * idf(h, he, node)
-end
-
-function general_weight(h::Hypergraph, he::Int, node::Int, dl_ave)::Float64
-  return 1.0 / length(getvertices(h, he))
-end
-
-function random_weight(h::Hypergraph=1, he=1, node=1, dl_ave=1)::Float64
-  return rand(1)[1]
 end
 
 
@@ -244,8 +202,10 @@ function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
   plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
   maxw = maximum([i.weight for i in bg])
   minw = minimum([i.weight for i in bg])
-  f(w) = (w-minw) / (maxw-minw)
+  f(w) = sqrt((w-minw) / (maxw-minw))
   color = [RGB(f(i.weight), f(i.weight), f(i.weight)) for i in bg]
+  # color = [RGB(0, f(i.weight), 1.) for i in bg]
+  println([f(i.weight) for i in bg][1:100])
   return Plots.scatter(
                 plot_arr,
                 markersize=6,

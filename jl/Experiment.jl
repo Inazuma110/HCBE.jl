@@ -98,17 +98,18 @@ end
 
 function experiment_real(h::Hypergraph, hname)
   ms_hists = []
+  ms_hists2 = []
   for i in 1:Int(floor(nhv(h)/100)):nhv(h)
     println(i)
     uf,ms, part, part_hist = clustering3(h, i, my_mod, tf)
     m = my_mod(h, part)
-    push!(ms_hists, m)
+    push!(ms_hists2, m)
   end
   # uf,ms, part, part_hist = clustering3(h, 30000, modularity, tfidf)
   # println(length(part))
   # m = my_mod(h, Set.(1:nhv(h)))
 
-  @save "./tf_ms.jld2" ms_hists
+  @save "./tf_ms.jld2" ms_hists2
 
   # push!(ms_hists, ms)
   # uf,ms, part, part_hist = clustering3(h, 1, modularity, okapi)
@@ -124,7 +125,7 @@ function experiment_real(h::Hypergraph, hname)
   # Plots.savefig("./images/$hname-f1masures.eps")
 end
 
-experiment(rg1, "rg1")
-experiment(rg2, "rg2")
-# youtube = build_youtube()
-# experiment_real(youtube, "youtube")
+# experiment(rg1, "rg1")
+# experiment(rg2, "rg2")
+youtube = build_youtube()
+experiment_real(youtube, "youtube")
