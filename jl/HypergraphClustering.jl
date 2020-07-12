@@ -67,7 +67,6 @@ function clustering2(h::Hypergraph, indicator::Function=jaccard, order=shuffle!(
   end
   sort!(densities, rev=true)
   order = [edge for (density, edge) in densities]
-  # println(order)
 
   # 順に回す
   for (step, he) in tqdm(enumerate(order))
@@ -139,13 +138,14 @@ function clustering2(h::Hypergraph, indicator::Function=jaccard, order=shuffle!(
 end
 
 # Calc all param
-function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=okapi, params=Dict())
+function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf, params=Dict();freq=1)
   uf = UnionFind(nhv(h)+nhe(h))
   m = 0
   best_m = -1
   ms = []
   best_part = []
   part_hist = []
+  epart_hist = []
   cluster_dict = Dict(1 => nhv(h))
   cluster_num = nhv(h)
   dl_ave = 0
@@ -156,8 +156,10 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   params["dl_ave"] = dl_ave
 
   edges = build_bg(h, weighted_f, params)
-  dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
+  # dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
   p = Set.(1:nhv(h))
+  ep = Set.(nhv(h)+1:nhv(h)+nhe(h))
+  bcn = -1
 
 
   @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
@@ -173,31 +175,33 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
       # heのルートがnodeなら
       if he_root <= nhv(h) cluster_num -= 1 end
 
-      p = partition(uf, nhv(h))
-      m = modularity_f(h, p)
-      if m > best_m
-        best_m = m
-        best_part = p
+      if step % freq == 0
+        p = partition(uf, nhv(h))
+        ep = partition(uf, length(uf.parent), nhv(h)+1)
+        m = modularity_f(h, p)
+        if m > best_m
+          best_m = m
+          best_part = p
+          bcn = cluster_num
+        end
       end
     end
 
     push!(ms, m)
     push!(part_hist, p)
+    push!(epart_hist, ep)
 
-    if cluster_num <= n_cluster
-      # p = partition(uf, nhv(h))
-      # best_part = p
-      break
-    end
+    # if cluster_num <= n_cluster break end
+    if length(ep) == n_cluster break end
   end
 
-  return uf, ms, best_part, part_hist
+  return ms, part_hist, epart_hist, bcn, uf
   # return dendrogram, uf, ms, gs, ks, node_visited_hist, he_visited_hist, best_part
 end
 
 
 # minimum calc
-function clustering4(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=okapi)
+function clustering4(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf)
   uf = UnionFind(nhv(h)+nhe(h))
   cluster_num = nhv(h)
   dl_ave = 0
@@ -227,6 +231,83 @@ function clustering4(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   return partition(uf, nhv(h))
 end
 
+function d_clustering(h1::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf)
+  h = Hypergraph(copy(h1))
+  order = []
+
+  cluster_num = nhv(h)
+  part_hist = []
+  uf = UnionFind(nhv(h)+nhe(h))
+  merged = [[false for j in 1:nhe(h)] for i in 1:nhv(h)]
+  dl_ave = 0
+  for he in 1:nhe(h)
+    dl_ave += length(gethyperedges(h, he))
+  end
+  dl_ave /= nhe(h)
+  edges = build_bg(h, weighted_f)
+  @showprogress 1 "computing..." for x in 1:length(edges)
+
+    for (step, edge) in (enumerate(edges))
+      node = edge.from
+      he = edge.to
+      weight = edge.weight
+      node_root = root(uf, node)
+      he_root = root(uf, he)
+      cluster_size = size(uf, node)
+      if merged[node][he-nhv(h)]
+        continue
+      end
+      is_connects = Dict([i => issame(uf, he, i) for i in nhv(h)+1:nhv(h)+nhe(h)])
+
+      # println(node, ' ', he-nhv(h))
+      merged[node][he-nhv(h)] = true
+      # push!(order, edge)
+      if !issame(uf, node, he)
+        unite!(uf, node, he)
+        # heのルートがnodeなら
+        if he_root <= nhv(h) cluster_num -= 1 end
+
+        is_connects2 = Dict([i => issame(uf, he, i) for i in nhv(h)+1:nhv(h)+nhe(h)])
+        if is_connects != is_connects2
+          new_vertices = Set(keys(getvertices(h, he-nhv(h))))
+          merged_hes = Set(he-nhv(h))
+          for i in nhv(h)+1:nhv(h)+nhe(h)
+            if is_connects[i] == is_connects2[i] continue end
+            push!(merged_hes, i-nhv(h))
+            push!.(Ref(new_vertices), Set(keys(getvertices(h, i-nhv(h)))))
+          end
+
+          merged_hes = [mhe for mhe in merged_hes]
+          sort!(merged_hes, rev=true)
+          # println(merged_hes)
+          # for mhe in merged_hes
+          #   remove_hyperedge!(h, mhe)
+          # end
+          # he_ind = add_hyperedge!(h)
+          # for i in new_vertices h[i, he_ind] = 1 end
+
+          for e in edges
+            if !(e.to-nhv(h) in merged_hes) continue end
+            new_idf = length(gethyperedges(h, e.from)) - length(intersect(keys(gethyperedges(h, e.from)), merged_hes))+1
+            e.weight = log(nhe(h) / new_idf) + 1
+            new_tf = length(merged_hes)
+            e.weight /= new_tf
+          end
+          sort!(edges, rev=true, lt=edge_comp)
+          break
+          # println(edges[1:10])
+          # println("===")
+        end
+      end
+      push!(part_hist, partition(uf, nhv(h)))
+      push!(order, edge)
+
+      if cluster_num <= n_cluster return uf, part_hist, order end
+    end
+  end
+  return uf, part_hist, order
+end
+
 function h2correlation(h::Hypergraph, f1, f2)
   okapi_e = build_bg(h, f1)
   tfidf_e = build_bg(h, f2)
@@ -252,3 +333,4 @@ function h2correlation(h::Hypergraph, f1, f2)
 
   return (arr1, arr2)
 end
+

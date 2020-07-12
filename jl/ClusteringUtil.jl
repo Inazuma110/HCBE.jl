@@ -70,12 +70,12 @@ function gini2(h::Hypergraph, cluster_dict)
 end
 
 
-function partition(uf::UnionFind{Int64}, size=length(uf.parent))::Vector{Set{Int}}
+function partition(uf::UnionFind{Int64}, to=length(uf.parent), from=1)::Vector{Set{Int}}
   d = Dict()
-  for (i, elem) in (enumerate(uf.parent[1:size]))
-    cluster_num = root(uf, i)
+  for (i, elem) in (enumerate(uf.parent[from:to]))
+    cluster_num = root(uf, from-1+i)
     d[cluster_num] = get(d, cluster_num, Set())
-    push!(d[cluster_num], i)
+    push!(d[cluster_num], from-1+i)
   end
   d = [(length(v), Set{Int64}(v)) for (k, v) in d]
   sort!(d, by=x->x[1], rev=true)
@@ -205,7 +205,6 @@ function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
   f(w) = sqrt((w-minw) / (maxw-minw))
   color = [RGB(f(i.weight), f(i.weight), f(i.weight)) for i in bg]
   # color = [RGB(0, f(i.weight), 1.) for i in bg]
-  println([f(i.weight) for i in bg][1:100])
   return Plots.scatter(
                 plot_arr,
                 markersize=6,
@@ -215,6 +214,29 @@ function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
                 ylabel="node",
                 label="",
                 title=name,
+               )
+end
+
+function plot_incidence2(h::Hypergraph, arr)
+  # pyplot()
+  # gr()
+  bg = arr
+  # bg = build_bg(h, weighted_f, params)
+  plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
+  maxw = length(bg)
+  minw = 1
+  f(w) = sqrt((w-minw) / (maxw-minw))
+  color = [RGB(f(i), f(i), f(i)) for (i, e) in enumerate(bg)]
+  # println(color)
+  # color = [RGB(0, f(i.weight), 1.) for i in bg]
+  return Plots.scatter(
+                plot_arr,
+                markersize=6,
+                markerstrokewidth=0,
+                color=color,
+                xlabel="hyperedges",
+                ylabel="node",
+                label="",
                )
 end
 
@@ -246,4 +268,52 @@ function curve(h::Hypergraph, f1, f2, similar_f=f1_score, params1=Dict(), params
   end
 
   return res
+end
+
+function disp_basic(h::Hypergraph)
+  node_degree_dist = [0 for i in 1:nhe(h)]
+  he_degree_dist = [0 for i in 1:nhv(h)]
+  for node in 1:nhv(h)
+    size = length(gethyperedges(h, node))
+    node_degree_dist[size] += 1
+  end
+  for he in 1:nhe(h)
+    size = length(getvertices(h, he))
+    he_degree_dist[size] += 1
+  end
+  # println(node_degree_dist)
+  # println(he_degree_dist)
+  p = Plots.bar(node_degree_dist, show=true)
+  display(p)
+  p = Plots.bar(he_degree_dist, show=true)
+  display(p)
+end
+
+function epart2cluster(h::Hypergraph, epart)
+  part = []
+  for ecluster in epart
+    p = Set([])
+    for he in ecluster
+      p = union(p, keys(getvertices(h, he-nhv(h))))
+    end
+    push!(part, p)
+  end
+  return part
+end
+
+function calc_entropy(h::Hypergraph, uf, p; weighted_f=tfidf, params=Dict())
+  cluster_set = Set()
+  for i in nhv(h)+1:nhv(h)+nhe(h) push!(cluster_set, root(uf, i)) end
+  cluster_nums = Dict([val => i for (i, val) in enumerate(cluster_set)])
+  entropies = Dict([i => [.0 for j in 1:length(cluster_nums)] for i in 1:nhv(h)])
+  bg = build_bg(h, weighted_f)
+  println(cluster_nums)
+  @showprogress 1 "computing.." for e in bg
+    cluster_num = cluster_nums[root(uf, e.to)]
+    entropies[e.from][cluster_num] += 1
+  end
+  for e in bg
+    entropies[e.from] ./= sum(entropies[e.from])
+  end
+  return entropies
 end

@@ -105,3 +105,20 @@ function build_youtube(fname="../youtube_giant.blbl")
 
 end
 
+function build_sample()
+  h1 = Hypergraph{Int64}(6,9)
+  h1[1:3,1] .= 1
+  h1[1:2,2] .= 1
+  h1[2:3,3] .= 1
+  h1[1, 4] = 1
+  h1[3, 4] = 1
+  h1[3:4, 5] .= 1
+  h1[4:6,6] .= 1
+  h1[4:5,7] .= 1
+  h1[5:6, 8] .= 1
+  h1[4, 9] = 1
+  h1[6, 9] = 1
+  # h1[3, 5:9] .= 1
+  return h1
+end
+
