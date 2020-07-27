@@ -145,9 +145,9 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   ms = []
   best_part = []
   part_hist = []
-  epart_hist = []
   cluster_dict = Dict(1 => nhv(h))
   cluster_num = nhv(h)
+  ufh = []
   dl_ave = 0
   for he in 1:nhe(h)
     dl_ave += length(gethyperedges(h, he))
@@ -157,7 +157,7 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
 
   edges = build_bg(h, weighted_f, params)
   # dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
-  p = Set.(1:nhv(h))
+  p::Array{Set{Int}} = Set.(1:nhv(h))
   ep = Set.(nhv(h)+1:nhv(h)+nhe(h))
   bcn = -1
 
@@ -177,7 +177,7 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
 
       if step % freq == 0
         p = partition(uf, nhv(h))
-        ep = partition(uf, length(uf.parent), nhv(h)+1)
+        # ep = partition(uf, length(uf.parent), nhv(h)+1)
         m = modularity_f(h, p)
         if m > best_m
           best_m = m
@@ -189,14 +189,70 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
 
     push!(ms, m)
     push!(part_hist, p)
-    push!(epart_hist, ep)
+    push!(ufh, copy(uf.parent))
 
-    # if cluster_num <= n_cluster break end
-    if length(ep) == n_cluster break end
+    if cluster_num <= n_cluster break end
   end
 
-  return ms, part_hist, epart_hist, bcn, uf
-  # return dendrogram, uf, ms, gs, ks, node_visited_hist, he_visited_hist, best_part
+  return ms, part_hist, best_part, ufh
+end
+
+function he_clustering(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf, params=Dict();freq=1)
+  uf = UnionFind(nhv(h)+nhe(h))
+  m = 0
+  best_m = -1
+  ms = []
+  best_part = []
+  part_hist = []
+  epart_hist = []
+  cluster_dict = Dict(1 => nhv(h))
+  cluster_num = nhv(h)
+  dl_ave = 0
+  for he in 1:nhe(h)
+    dl_ave += length(gethyperedges(h, he))
+  end
+  dl_ave /= nhe(h)
+  params["dl_ave"] = dl_ave
+
+  edges = build_bg(h, weighted_f, params)
+  # dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
+  p = Set.(1:nhv(h))
+  ep = Set.(nhv(h)+1:nhv(h)+nhe(h))
+  bcn = -1
+  count = 0
+
+
+  @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
+    node = edge.from
+    he = edge.to
+    weight = edge.weight
+    node_root = root(uf, node)
+    he_root = root(uf, he)
+    cluster_size = size(uf, node)
+
+    if !issame(uf, node, he)
+      unite!(uf, node, he)
+      # heのルートがnodeなら
+      if he_root <= nhv(h) cluster_num -= 1 end
+
+      if step % freq == 0
+        ep = partition(uf, length(uf.parent), nhv(h)+1)
+        # m = modularity(h, epart2cluster(h, ep))
+        if m > best_m
+          best_m = m
+          best_part = p
+          bcn = cluster_num
+        end
+      end
+    end
+
+    push!(ms, m)
+    push!(epart_hist, ep)
+
+    if length(ep) <= n_cluster break end
+  end
+
+  return ms, epart_hist, bcn, uf
 end
 
 

@@ -33,8 +33,6 @@ function build_trimcookpad(fname)
 end
 
 @time const trim_cookpad = build_trimcookpad("../ingredients_trim15.blbl")
-@time arr1, arr2 = h2correlation(trim_cookpad, tfidf, general_weight)
-using StatsBase
-# スピアマン ケンドール
-println(corspearman(arr1, arr2), ' ', corkendall(arr1, arr2))
 
+@time ms, ph, eph, bcn, uf = he_clustering(trim_cookpad, 1, my_mod, freq=100)
+@save "cookpad_heclus.jld2" ms ph eph bcn uf

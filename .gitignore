@@ -10,3 +10,6 @@ jl/youtube.ipynb
 jl/julia_cluster.ipynb
 dataset/*
 *.eps
+*.json
+*.csv
+jl/data/*

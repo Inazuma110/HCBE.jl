@@ -11,89 +11,42 @@ include("HypergraphClustering.jl")
 include("./IO.jl")
 rg1 = txt2h("./rg.txt")
 rg2 = txt2h("./rg2.txt")
+rg3 = txt2h("./rg3.txt")
+rg4 = txt2h("./rg4.txt")
 
 function experiment(h, hname)
   pyplot()
-  # arr = []
-  # for b in 0:0.5:1.0
-  #   params = Dict("k1"=>2.0, "b"=>b)
-  #   k1 = params["k1"]
-  #   b = params["b"]
-  #   push!(arr, plot_incidence(h, "okapi k1=$k1 b=$b", okapi, params))
-  #   params = Dict("k1"=>1.2, "b"=>b)
-  #   k1 = params["k1"]
-  #   b = params["b"]
-  #   push!(arr, plot_incidence(h, "okapi k1=$k1 b=$b", okapi, params))
-  # end
-  # Plots.plot(arr..., size=(1000, 500))
-  # Plots.savefig("./images/$hname-okapi_incidence_matrix.eps")
-
-  # p_arr = []
-  # push!(p_arr, plot_incidence(h, "TF-IDF", tfidf))
-  # push!(p_arr, plot_incidence(h, "Okapi k1=2.0 b1=1.0", okapi, Dict("k1"=>2.0, "b"=>1.0)))
-  # push!(p_arr, plot_incidence(h, "TF", tf))
-  # push!(p_arr, plot_incidence(h, "IDF", idf))
-  # push!(p_arr, plot_incidence(h, "Random", random_weight))
-  #
-  # Plots.plot(p_arr..., size=(1000, 500))
-  # Plots.savefig("./images/$hname-incidence_matrix.eps")
-  #
-  # scores = []
   tr_data = Set.([1:100, 101:200, 201:300, 301:400, 401:500])
-  # uf,ms, part, part_hist = clustering3(h, 1, modularity, tfidf)
-  # push!(scores,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
-  # uf,ms, part, part_hist = clustering3(h, 1, modularity, okapi, Dict("k1"=>2.0, "b"=>1.0))
-  # push!(scores,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
-  # uf,ms, part, part_hist = clustering3(h, 1, modularity, tf)
-  # push!(scores,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
-  # uf,ms, part, part_hist = clustering3(h, 1, modularity, idf)
-  # push!(scores,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
-  # uf,ms, part, part_hist = clustering3(h, 1, modularity, random_weight)
-  # push!(scores,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
-  #
-  # Plots.plot(scores, label=["TF-IDF" "Okapi k1=2.0 b=1.0" "TF" "IDF" "Random"], lw=5, xlabel="#Added edges", ylabel="F1 measure")
-  # Plots.savefig("./images/$hname-f1masures.eps")
+  path = "./data/kbs2020/"
 
-  scores2 = []
-  for b in 0:0.5:1
-    params = Dict("k1"=>1.2, "b"=>b)
-    uf,ms, part, part_hist = clustering3(h, 1, modularity, okapi, params)
-    push!(scores2,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
-    params = Dict("k1"=>2.0, "b"=>b)
-    uf,ms, part, part_hist = clustering3(h, 1, modularity, okapi, params)
-    push!(scores2,scoring.(part_hist, Ref(tr_data), Ref(f1_score)))
+  f = open("$path$hname-data", "w")
+
+  ms, ph, bp, ufh = clustering3(h)
+  Plots.plot(ms, xlabel="#Added edges in bipartite graph", ylabel="Modularity")
+  Plots.savefig("$path$hname-hard.eps")
+
+  cfm = CFModularityCNMLike(1000)
+  a, b, hist = findcommunities(h, cfm)
+  Plots.plot(hist, xlabel="#Simulations", ylabel="Modularity")
+  Plots.savefig("$path$hname-existing.eps")
+
+  ms, eph, bcn, uf = he_clustering(h, 5)
+  prob_dists = calc_entropy(h, uf, eph[end])
+  for (k, v) in prob_dists
+    if !(1.0 in v) println(f, k, ' ', v) end
   end
+  avg_ents = avg_entropy.(values(prob_dists))
+  arr = []
+  for (i, (k, v)) in enumerate(prob_dists)
+    push!(arr, (k, avg_ents[i]))
+  end
+  sort!(arr, rev=true, by=i->i[2])
+  println(f, arr)
 
-  Plots.plot(scores2, label=["k1=1.2, b=0" "k1=2.0, b=0" "k1=1.2, b=0.5" "k1=2.0, b=0.5" "k1=1.2, b=1.0" "k1=2.0, b=1.0"], lw=5, xlabel="#Added edges", ylabel="f1 measure")
-  Plots.savefig("./images/$hname-okapi_f1masures.eps")
-
-  # cs = []
-  # plot_names = []
-  # indicator_names = ["Okapi k1=2.0 b=1.0" "TF" "IDF" "Random"]
-  # indicators = [okapi, tf, idf, random_weight]
-  # for i in 1:5
-  #   for j in i+1:5
-  #     if i == j continue end
-  #     name1 = indicator_names[i]
-  #     name2 = indicator_names[j]
-  #     ind1 = indicators[i]
-  #     ind2 = indicators[j]
-  #     push!(cs, curve(h, ind1, ind2))
-  #     #         plot_names[p] = "$name1 $name2"
-  #     #         p += 1
-  #     push!(plot_names, "$name1 $name2")
-  #   end
-  # end
-  #
-  # for (name, ind) in zip(indicator_names, indicators)
-  #   push!(cs, curve(h, tfidf, ind, f1_score, Dict(), Dict("k1"=>2.0, "b"=>1.0)))
-  #   push!(plot_names, "TF-IDF VS $name")
-  # end
-  #
-  # Plots.plot(cs, label=permutedims(plot_names), xlabel="#Added edges", ylabel="f1 measure", xscale=:log10, lw=5)
-  # # permutedims(plot_names)
-  # Plots.savefig("./images/$hname-f1_curve.eps")
-  #
+  Plots.histogram(avg_ents, xlabel="Entropy", ylabel="#Node", bins=10, yscale=:log10)
+  Plots.savefig("$path$hname-ent_hist.eps")
+  close(f)
+  return hist
 end
 
 function experiment_real(h::Hypergraph, hname)
@@ -125,7 +78,11 @@ function experiment_real(h::Hypergraph, hname)
   # Plots.savefig("./images/$hname-f1masures.eps")
 end
 
-# experiment(rg1, "rg1")
-# experiment(rg2, "rg2")
-youtube = build_youtube()
-experiment_real(youtube, "youtube")
+arr = []
+push!(arr, experiment(rg1, "rg1"))
+push!(arr, experiment(rg2, "rg2"))
+push!(arr, experiment(rg3, "rg3"))
+push!(arr, experiment(rg4, "rg4"))
+Plots.plot(arr, labels=["rg1" "rg2" "rg3" "rg4"], xlabel="#Added edges in bipartite graph", ylabel="Modularity", lw=5)
+Plots.savefig("./data/kbs2020/existing_all.eps")
+

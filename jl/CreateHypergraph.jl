@@ -1,5 +1,5 @@
 using Pkg
-using Random, SimpleHypergraphs
+using Random, SimpleHypergraphs, StatsBase, ProgressMeter, ProgressBars
 
 # clusters cluster num
 # npcs node per cluster 1つあたりの頂点数
@@ -40,11 +40,20 @@ function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)
     # println(rand(1)[1])
     if !is_noise continue end
 
-    # included_num = (rand(Int64, 1)[1] % Int(floor(nhe(h) * noise_rate))) + 1
-    # included_he = randperm(nhe(h))[1:included_num]
-    included_he = randsubseq(1:nhe(h), he_rate)
-    h[node, included_he] .= 1
-    is_noises[node][node_num.+included_he] .= true
+    included_cluster_num = StatsBase.sample(1:length(npcs))
+    included_clusters = randperm(included_cluster_num)
+
+    for cluster in included_clusters
+      included_he = randsubseq(1:nhe(h), rand(1)[1])
+      for he in included_he
+        if hepcs[cluster] * (cluster-1) >= he continue end
+        if hepcs[cluster] * cluster < he continue end
+        h[node, he] = 1
+      end
+      # h[node, cluster*npcs[1] .+ included_he] .= 1
+      # is_noises[node][node_num.+included_he] .= true
+    end
+
   end
 
   return h, is_noises, training_data
@@ -100,9 +109,79 @@ function build_youtube(fname="../youtube_giant.blbl")
         end
     end
     close(io)
-
     return h
+end
 
+function build_wiki(fname="../wiki/enwiki-2013.txt")
+    io = open(fname, "r")
+    lnum = 0
+    recipe = []
+    h = Hypergraph{Int}(4203323, 4203323)
+    recipe_dict = Dict{Int,Int}()
+    for line in tqdm(eachline(io))
+      lnum += 1
+      if(lnum <= 4)
+        continue
+      end
+
+      line = parse.(Int, split(line, " "))
+      h[line[1]+1, line[2]+1] = 1
+    end
+    close(io)
+    return h
+end
+
+function build_amazon(fname="../amazon-meta.txt")
+    io = open(fname, "r")
+    lnum = 0
+    id_s = Set()
+    customer_s = Set()
+    d = Dict()
+    data = Dict()
+    delimitor = r",|\t|:| "
+    for line in tqdm(eachline(io))
+      lnum += 1
+      if lnum <= 7 continue end
+
+      line = split(line, delimitor, keepempty=false)
+      if isempty(line)
+        if haskey(d, "Id") push!(id_s, d["Id"]) end
+        for (k, v) in d
+          if '-' in k && length(v) >= 2 push!(customer_s, v[2]) end
+        end
+      else d[line[1]] = line[2:end] end
+    end
+    close(io)
+    return id_s, customer_s
+end
+
+function build_dblp(fname="../com-dblp.all.cmty.txt")
+  io = open(fname, "r")
+  lnum = 0
+  d = Dict([])
+  s = Set()
+  for line in tqdm(eachline(io))
+    line = parse.(Int, split(line, "\t"))
+    for node in line
+      push!(s, node)
+    end
+  end
+  close(io)
+
+  d = Dict([node=>i for (i, node) in enumerate(s)])
+
+  io = open(fname, "r")
+  h = Hypergraph{Int64}(length(s), 13477)
+  for line in tqdm(eachline(io))
+    lnum += 1
+
+    line = parse.(Int, split(line, "\t"))
+    for node in line
+      h[d[node], lnum] = 1
+    end
+  end
+  close(io)
+  return h
 end
 
 function build_sample()

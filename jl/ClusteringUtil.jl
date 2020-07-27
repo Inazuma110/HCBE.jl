@@ -290,8 +290,8 @@ function disp_basic(h::Hypergraph)
 end
 
 function epart2cluster(h::Hypergraph, epart)
-  part = []
-  for ecluster in epart
+  part::Array{Set{Int64}} = []
+  @showprogress for ecluster in epart
     p = Set([])
     for he in ecluster
       p = union(p, keys(getvertices(h, he-nhv(h))))
@@ -307,13 +307,33 @@ function calc_entropy(h::Hypergraph, uf, p; weighted_f=tfidf, params=Dict())
   cluster_nums = Dict([val => i for (i, val) in enumerate(cluster_set)])
   entropies = Dict([i => [.0 for j in 1:length(cluster_nums)] for i in 1:nhv(h)])
   bg = build_bg(h, weighted_f)
-  println(cluster_nums)
   @showprogress 1 "computing.." for e in bg
     cluster_num = cluster_nums[root(uf, e.to)]
-    entropies[e.from][cluster_num] += 1
+    entropies[e.from][cluster_num] += e.weight
   end
   for e in bg
     entropies[e.from] ./= sum(entropies[e.from])
   end
   return entropies
+end
+
+function avg_entropy(prob_dist)
+  avg = 0
+  for prob in prob_dist
+    if prob == 0 continue end
+    avg += prob * log(length(prob_dist), prob)
+  end
+  avg *= -1
+  if avg == -0.0 return 0
+  else return avg end
+end
+
+function prob_dist2part(prob_dists, threshold=0.5)
+  part::Array{Set{Int64}} = [Set() for i in 1:length(prob_dists[1])]
+  @showprogress 1 "computing..." for (node, prob_dist) in prob_dists
+    for (i, prob) in enumerate(prob_dist)
+      if prob > threshold push!(part[i], node) end
+    end
+  end
+  return part
 end
