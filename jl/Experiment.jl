@@ -78,11 +78,12 @@ function experiment_real(h::Hypergraph, hname)
   # Plots.savefig("./images/$hname-f1masures.eps")
 end
 
-arr = []
-push!(arr, experiment(rg1, "rg1"))
-push!(arr, experiment(rg2, "rg2"))
-push!(arr, experiment(rg3, "rg3"))
-push!(arr, experiment(rg4, "rg4"))
-Plots.plot(arr, labels=["rg1" "rg2" "rg3" "rg4"], xlabel="#Added edges in bipartite graph", ylabel="Modularity", lw=5)
-Plots.savefig("./data/kbs2020/existing_all.eps")
 
+# arr = []
+# push!(arr, experiment(rg1, "rg1"))
+# push!(arr, experiment(rg2, "rg2"))
+# push!(arr, experiment(rg3, "rg3"))
+# push!(arr, experiment(rg4, "rg4"))
+# Plots.plot(arr, labels=["rg1" "rg2" "rg3" "rg4"], xlabel="#Added edges in bipartite graph", ylabel="Modularity", lw=5)
+# Plots.savefig("./data/kbs2020/existing_all.eps")
+#
