@@ -210,8 +210,8 @@ function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
                 markersize=6,
                 markerstrokewidth=0,
                 color=color,
-                xlabel="hyperedges",
-                ylabel="node",
+                xlabel="Hyperedges",
+                ylabel="Node",
                 label="",
                 title=name,
                )
@@ -337,3 +337,66 @@ function prob_dist2part(prob_dists, threshold=0.5)
   end
   return part
 end
+
+function cluster_visualization(h::Hypergraph, p)
+  colors = ["red" "blue" "yellow" "green" "brown" "cyan" "magenta" "pink" "white" "gray" ]
+  ec = ["gray" for i in nhe(h)]
+  c = ["" for i in 1:nhv(h)]
+  sort!(p, rev=true, by=i->length(i))
+
+  for (i, cluster) in enumerate(p)
+    for node in cluster
+      c[node] = length(cluster) == 1 ? "black" : colors[i]
+    end
+  end
+
+  SimpleHypergraphs.draw(h,
+                         HyperNetX,
+                         nodes_kwargs=Dict(["facecolors"=>c]),
+                         edges_kwargs=Dict(["edgecolors"=>ec]),
+                         layout_kwargs=Dict(["seed"=>0]),
+                         # with_node_labels=false
+                        )
+
+  return c
+end
+
+function disp_cluster_bias(p)
+  Plots.pie(length.(p), label="")
+end
+
+
+# function testmod(h::Hypergraph, method::CFModularityCNMLike, fx)
+#     ha = HypergraphAggs(h)
+#     best_modularity = 0
+#     comms = [Set(i) for i in 1:nhv(h)]
+#     mod_history = Vector{Float64}(undef, method.reps)
+#     for rep in 1:method.reps
+#         he = rand(1:nhe(h))
+#         vers = collect(keys(getvertices(h, he)))
+#         if length(vers) == 0
+#             continue
+#         end;
+#         c = deepcopy(comms)
+#         i0 = fx(c, vers)
+#         max_i = length(c)
+#         i_cur = i0
+#         while i_cur < max_i
+#             i_cur += 1
+#             if length(intersect(c[i_cur],vers)) > 0
+#                 union!(c[i0], c[i_cur])
+#                 c[i_cur]=c[max_i]
+#                 max_i += -1
+#             end
+#                 println(c)
+#         end
+#         resize!(c,max_i)
+#         m = my_mod(h, c)
+#         if m > best_modularity
+#             best_modularity = m
+#             comms = c
+#         end
+#         mod_history[rep] = best_modularity
+#     end
+#     return (bm=best_modularity, bp=comms, mod_history=mod_history)
+# end

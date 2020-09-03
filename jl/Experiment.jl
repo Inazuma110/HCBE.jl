@@ -13,6 +13,8 @@ rg1 = txt2h("./rg.txt")
 rg2 = txt2h("./rg2.txt")
 rg3 = txt2h("./rg3.txt")
 rg4 = txt2h("./rg4.txt")
+youtube = build_youtube()
+
 
 function experiment(h, hname)
   pyplot()
@@ -50,19 +52,32 @@ function experiment(h, hname)
 end
 
 function experiment_real(h::Hypergraph, hname)
-  ms_hists = []
-  ms_hists2 = []
-  for i in 1:Int(floor(nhv(h)/100)):nhv(h)
-    println(i)
-    uf,ms, part, part_hist = clustering3(h, i, my_mod, tf)
-    m = my_mod(h, part)
-    push!(ms_hists2, m)
+  # ms_hists = []
+  # fs = [tfidf, okapi, tf, idf, random_weight]
+  # tr_data = Set.([1:100, 101:200, 201:300, 301:400, 401:500])
+  # for ind in fs
+  #   ms_hists2 = []
+  #   # for i in 1:Int(floor(nhv(h)/100)):nhv(h)
+  #     ms, ph, bp, ufh, scores = clustering3(h, 1, modularity, ind)
+  #     score = scoring.(Ref(tr_data), ph, f1_score)
+  #     # push!(ms_hists2, score)
+  #   # end
+  #   # push!(ms_hists, ms_hists2)
+  #   push!(ms_hists, score)
+  # end
+# include("./ClusteringUtil.jl")
+# params = Dict("k1"=> 2.0, "b"=>0.75)
+  arr = []
+  for b in 0:0.5:1.0
+    params = Dict("k1"=>1.2, "b"=>b)
+    ms, ph, bp, ufh, scores = clustering3(h, 1, my_mod, okapi, params, freq=100)
+    push!(arr, ms)
+    params = Dict("k1"=>2.0, "b"=>b)
+    ms, ph, bp, ufh, scores = clustering3(h, 1, my_mod, okapi, params, freq=100)
+    push!(arr, ms)
   end
-  # uf,ms, part, part_hist = clustering3(h, 30000, modularity, tfidf)
-  # println(length(part))
-  # m = my_mod(h, Set.(1:nhv(h)))
 
-  @save "./tf_ms.jld2" ms_hists2
+  @save "./youtube_okapis.jld2" arr
 
   # push!(ms_hists, ms)
   # uf,ms, part, part_hist = clustering3(h, 1, modularity, okapi)
@@ -79,6 +94,7 @@ function experiment_real(h::Hypergraph, hname)
 end
 
 
+experiment_real(youtube, "youtube")
 # arr = []
 # push!(arr, experiment(rg1, "rg1"))
 # push!(arr, experiment(rg2, "rg2"))

@@ -141,7 +141,8 @@ end
 function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf, params=Dict();freq=1)
   uf = UnionFind(nhv(h)+nhe(h))
   m = 0
-  best_m = -1
+  best_m = 0
+  best_score = -1
   ms = []
   best_part = []
   part_hist = []
@@ -156,10 +157,12 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   params["dl_ave"] = dl_ave
 
   edges = build_bg(h, weighted_f, params)
-  # dendrogram = [(-1, -1, -1) for i in 1:nhv(h)+nhe(h)]
   p::Array{Set{Int}} = Set.(1:nhv(h))
   ep = Set.(nhv(h)+1:nhv(h)+nhe(h))
   bcn = -1
+  y = Set.([1:100, 101:200, 201:300, 301:400, 401:500])
+  scores = []
+  score = 0
 
 
   @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
@@ -177,10 +180,10 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
 
       if step % freq == 0
         p = partition(uf, nhv(h))
-        # ep = partition(uf, length(uf.parent), nhv(h)+1)
         m = modularity_f(h, p)
+        score = scoring(y, p, f1_score)
         if m > best_m
-          best_m = m
+          best_score = score
           best_part = p
           bcn = cluster_num
         end
@@ -190,11 +193,12 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
     push!(ms, m)
     push!(part_hist, p)
     push!(ufh, copy(uf.parent))
+    push!(scores, score)
 
     if cluster_num <= n_cluster break end
   end
 
-  return ms, part_hist, best_part, ufh
+  return ms, part_hist, best_part, ufh, scores
 end
 
 function he_clustering(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf, params=Dict();freq=1)
