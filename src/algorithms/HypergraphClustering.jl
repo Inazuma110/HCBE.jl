@@ -136,7 +136,12 @@ function clustering2(h::Hypergraph, indicator::Function=jaccard, order=shuffle!(
 end
 
 # Calc all param
-function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf, params=Dict();freq=1)
+function h_HCBE(h::Hypergraph;
+                n_cluster=1,
+                modularity_f=modularity,
+                weighted_f=tfidf,
+                params=Dict(),
+                freq=Inf)
   uf = UnionFind(nhv(h)+nhe(h))
   m = 0
   best_m = 0
@@ -149,7 +154,7 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   ufh = []
   dl_ave = 0
   for he in 1:nhe(h)
-    dl_ave += length(gethyperedges(h, he))
+    dl_ave += length(getvertices(h, he))
   end
   dl_ave /= nhe(h)
   params["dl_ave"] = dl_ave
@@ -176,10 +181,10 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
       # heのルートがnodeなら
       if he_root <= nhv(h) cluster_num -= 1 end
 
+      p = partition(uf, nhv(h))
       if step % freq == 0
-        p = partition(uf, nhv(h))
         m = modularity_f(h, p)
-        score = scoring(y, p, f1_score)
+        # score = scoring(y, p, f1_score)
         if m > best_m
           best_score = score
           best_part = p
@@ -199,7 +204,12 @@ function clustering3(h::Hypergraph, n_cluster=1, modularity_f=modularity, weight
   return ms, part_hist, best_part, ufh, scores
 end
 
-function he_clustering(h::Hypergraph, n_cluster=1, modularity_f=modularity, weighted_f=tfidf, params=Dict();freq=1)
+function s_HCBE(h::Hypergraph;
+                n_cluster=1,
+                modularity_f=modularity,
+                weighted_f=tfidf,
+                params=Dict(),
+                freq=1)
   uf = UnionFind(nhv(h)+nhe(h))
   m = 0
   best_m = -1
@@ -211,7 +221,7 @@ function he_clustering(h::Hypergraph, n_cluster=1, modularity_f=modularity, weig
   cluster_num = nhv(h)
   dl_ave = 0
   for he in 1:nhe(h)
-    dl_ave += length(gethyperedges(h, he))
+    dl_ave += length(getvertices(h, he))
   end
   dl_ave /= nhe(h)
   params["dl_ave"] = dl_ave
@@ -317,7 +327,6 @@ function d_clustering(h1::Hypergraph, n_cluster=1, modularity_f=modularity, weig
       end
       is_connects = Dict([i => issame(uf, he, i) for i in nhv(h)+1:nhv(h)+nhe(h)])
 
-      # println(node, ' ', he-nhv(h))
       merged[node][he-nhv(h)] = true
       # push!(order, edge)
       if !issame(uf, node, he)
@@ -337,7 +346,6 @@ function d_clustering(h1::Hypergraph, n_cluster=1, modularity_f=modularity, weig
 
           merged_hes = [mhe for mhe in merged_hes]
           sort!(merged_hes, rev=true)
-          # println(merged_hes)
           # for mhe in merged_hes
           #   remove_hyperedge!(h, mhe)
           # end
@@ -353,8 +361,6 @@ function d_clustering(h1::Hypergraph, n_cluster=1, modularity_f=modularity, weig
           end
           sort!(edges, rev=true, lt=edge_comp)
           break
-          # println(edges[1:10])
-          # println("===")
         end
       end
       push!(part_hist, partition(uf, nhv(h)))

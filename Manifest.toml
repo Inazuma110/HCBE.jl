@@ -657,9 +657,3 @@ deps = ["LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "28ffe06d28b1ba8fdb2f36ec7bb079fac81bac0d"
 uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 version = "0.5.2"
-
-[[src]]
-deps = ["Pkg", "Random"]
-path = "src"
-uuid = "14ec9285-ff7d-5059-98f8-97676e6c56e6"
-version = "0.0.0"

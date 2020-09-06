@@ -7,8 +7,7 @@ end
 
 function edge_comp(a::edge, b::edge)
   if a.weight == b.weight
-    if a.from == b.from return a.to < b.to end
-    return a.from < b.from
+    return a.id < b.id
   end
   return a.weight < b.weight
 end
@@ -359,7 +358,6 @@ end
 function disp_cluster_bias(p)
   Plots.pie(length.(p), label="")
 end
-
 
 # function testmod(h::Hypergraph, method::CFModularityCNMLike, fx)
 #     ha = HypergraphAggs(h)
