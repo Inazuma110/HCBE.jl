@@ -1,2 +1,4 @@
 include("../src/HCBE.jl")
-sam = build_sam()
+
+h = build_sam()
+println(h)

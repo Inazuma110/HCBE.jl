@@ -1,6 +1,3 @@
-using Pkg
-using Random, SimpleHypergraphs, StatsBase, ProgressMeter, ProgressBars
-
 # clusters cluster num
 # npcs node per cluster 1つあたりの頂点数
 function create_hypergraph(npcs, hepcs, he_rate=0.5, noise_rate=0.1)

@@ -1,5 +1,3 @@
-using Pkg, SimpleHypergraphs, Random
-
 function jaccard(s1, s2)::Float64
   return length(intersect(s1, s2)) / length(union(s1, s2))
 end

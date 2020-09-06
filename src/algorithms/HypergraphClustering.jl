@@ -1,6 +1,4 @@
 include("./Unionfind.jl")
-include("./ClusteringUtil.jl")
-using Pkg, SimpleHypergraphs, Random,  ProgressBars, Plots, LightGraphs, ProgressMeter
 
 function clustering(h::Hypergraph, gini_func::Function=gini, order=shuffle!([i for i in 1:nhe(h)]))
   ginis = []
