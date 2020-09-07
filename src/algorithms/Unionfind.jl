@@ -1,3 +1,12 @@
+# https://github.com/Inazuma110/HCBE.jl/issues/7
+# Deprecated
+
+"""
+  UnionFind{T <: Integer}
+
+  **Deprecated!!**
+  In the future, using [DataStructures.jl](https://github.com/JuliaCollections/DataStructures.jl)'s DisjointSet.
+"""
 mutable struct UnionFind{T <: Integer}
   parent:: Vector{T}  # parent[root] is the negative of the size
 

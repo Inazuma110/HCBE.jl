@@ -185,8 +185,7 @@ end
 
 
 function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
-  # pyplot()
-  # gr()
+  pyplot()
   bg = build_bg(h, weighted_f, params)
   plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
   maxw = maximum([i.weight for i in bg])
@@ -278,6 +277,10 @@ function disp_basic(h::Hypergraph)
   display(p)
 end
 
+"""
+  epart2cluster(h::Hypergraph, epart::Array{Set{Int}})
+
+"""
 function epart2cluster(h::Hypergraph, epart)
   part::Array{Set{Int64}} = []
   @showprogress for ecluster in epart
@@ -290,7 +293,7 @@ function epart2cluster(h::Hypergraph, epart)
   return part
 end
 
-function calc_entropy(h::Hypergraph, uf, p; weighted_f=tfidf, params=Dict())
+function epart2probdist(h::Hypergraph, uf, p; weighted_f=tfidf, params=Dict())
   cluster_set = Set()
   for i in nhv(h)+1:nhv(h)+nhe(h) push!(cluster_set, root(uf, i)) end
   cluster_nums = Dict([val => i for (i, val) in enumerate(cluster_set)])

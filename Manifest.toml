@@ -83,9 +83,9 @@ version = "3.15.0"
 
 [[Compose]]
 deps = ["Base64", "Colors", "DataStructures", "Dates", "IterTools", "JSON", "LinearAlgebra", "Measures", "Printf", "Random", "Requires", "Statistics", "UUIDs"]
-git-tree-sha1 = "157b75f64c26f36b55b5456dff08e524e591ec8d"
+git-tree-sha1 = "a2b4df8e2dc688f2d63b5cfcc00c773218fa9e7f"
 uuid = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
-version = "0.9.0"
+version = "0.9.1"
 
 [[Conda]]
 deps = ["JSON", "VersionParsing"]

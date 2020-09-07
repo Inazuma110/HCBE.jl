@@ -1,5 +1,6 @@
 module HCBE
 using SimpleHypergraphs, Random,  ProgressBars, Plots, LightGraphs, ProgressMeter, JLD2, FileIO, PyPlot, ScikitLearn, GraphPlot, StatsBase, JSON, StatsPlots
+using DataStructures
 
 include("./algorithms/HypergraphClustering.jl")
 include("./algorithms/Weighted.jl")
