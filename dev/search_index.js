@@ -1,0 +1,3 @@
+var documenterSearchIndex = {"docs":
+[{"location":"","page":"Home","title":"Home","text":"CurrentModule = HCBE","category":"page"},{"location":"#HCBE","page":"Home","title":"HCBE","text":"","category":"section"},{"location":"","page":"Home","title":"Home","text":"","category":"page"},{"location":"","page":"Home","title":"Home","text":"Modules = [HCBE]","category":"page"},{"location":"#HCBE.h2txt-Tuple{SimpleHypergraphs.Hypergraph,Any}","page":"Home","title":"HCBE.h2txt","text":"h2txt(h::Hypergraph, fname::AbstractString)\n\nTranslate hypergraph to text file. This is in the following form.\n\nN M\n\nN is number of hypergraph vertices. M is number of hypereedges.\n\n\n\n\n\n","category":"method"}]
+}
