@@ -1,3 +1,15 @@
+"""
+  edge
+
+Edge of bipartite graph with star expansion of a hypergraph.
+
+**Arguments**
+
+* from : Vertex number that the edge connects to.  It is a number representing a vertex of the hypergraph.
+* to : Vertex number that the edge connects to. It is a number representing a hyperedge of the hypergraph.
+* weight : Edge weight.
+* id : The number of edges that this structure represents.
+"""
 mutable struct edge
   from::Int
   to::Int
@@ -5,6 +17,13 @@ mutable struct edge
   id::Int
 end
 
+"""
+  edge_comp(a::edge, b::edge)
+
+Edge comparison function.
+Sort in descending order of weight.
+If the weights are the same, they are compared according to the IDs of the edges.
+"""
 function edge_comp(a::edge, b::edge)
   if a.weight == b.weight
     return a.id < b.id
@@ -12,59 +31,26 @@ function edge_comp(a::edge, b::edge)
   return a.weight < b.weight
 end
 
-function gini(h::Hypergraph, cluster_dict)
-  k = 0
-  sum = 0
-  for (key, val) in cluster_dict
-    k += val
-    sum += key * val
-  end
-  if k == 1 return (1, 1) end
+"""
+partition(uf::UnionFind{Int},
+          to::Int=length(uf.parent),
+          from::Int=1,
+          )::Vector{Set{Int}}
 
-  gini = 0
+Compute the clustering result from the disjoint set.
 
-  for (i, val1) in cluster_dict
-    for (j, val2) in cluster_dict
-      gini += abs(i - j) * (val1 * val2)
-    end
-  end
-  gini /= 2
+**Arguments**
 
-  gini = (gini / binomial(k, 2)) / (sum / k)
-  gini /= 2
-
-  return (gini, k)
-end
-
-function gini2(h::Hypergraph, cluster_dict)
-  k = 0
-  sum = 0
-
-  for (key, val) in cluster_dict
-    if(key == 1) continue end
-    k += val
-    sum += key * val
-  end
-  if k <= 1 return (1, 1) end
-
-  gini = 0
-
-  for (i, val1) in cluster_dict
-    for (j, val2) in cluster_dict
-      if(i == 1 || j == 1) continue end
-      gini += abs(i - j) * (val1 * val2)
-    end
-  end
-  gini /= 2
-
-  gini = (gini / binomial(k, 2)) / (sum / k)
-  gini /= 2
-
-  return (gini, k)
-end
-
-
-function partition(uf::UnionFind{Int64}, to=length(uf.parent), from=1)::Vector{Set{Int}}
+* uf : The disjoint set obtained by clustering.
+* to : Disjoint sets up to A are used.
+For example, if you want to get a vertex-only clustering result,
+specify the number of vertices.
+* from : Use a disjoint set from A.
+"""
+function partition(uf::UnionFind{Int64},
+                   to::Int=length(uf.parent),
+                   from::Int=1
+                  )::Vector{Set{Int}}
   d = Dict()
   for (i, elem) in (enumerate(uf.parent[from:to]))
     cluster_num = root(uf, from-1+i)
@@ -77,7 +63,12 @@ function partition(uf::UnionFind{Int64}, to=length(uf.parent), from=1)::Vector{S
   return d
 end
 
-function my_mod(h, part)
+"""
+  my_mod(h::Hypergraph, part::Array{Set{any}})
+
+Computes the modularity when `h` is divided by `part`.
+"""
+function my_mod(h::Hypergraph, part)
   ml = 0
   mr = 0
   v = 0
@@ -133,24 +124,11 @@ function my_mod(h, part)
   (ml - mr) / nhe(h)
 end
 
-function part2is_samecluster(part)
-  node_num = sum(length.(part))
-  samecluster = Dict([i => Dict([j => 0 for j in i+1:node_num]) for i in 1:node_num])
-  # samecluster = [i => Dict(j => 0) for i in 1:node_num for j in 1:node_num]
+"""
+  build_bg(h::Hypergraph, weighted_f::Function=tfidf, param=Dict())
 
-  for cluster in part
-    for n1 in cluster
-      for n2 in cluster
-        if n2 <= n1 continue end
-        samecluster[n1][n2] = true
-      end
-    end
-  end
-
-  samecluster = [samecluster[i][j] for i in 1:node_num for j in i+1:node_num]
-  return samecluster
-end
-
+Star expand `h` and construct a bipartite graph. Each edge is weighted by `weighted_f`.
+"""
 function build_bg(h::Hypergraph, weighted_f=tfidf, params=Dict())
   edges = Set()
   params["dl_ave"] = 0
@@ -175,6 +153,24 @@ function build_bg(h::Hypergraph, weighted_f=tfidf, params=Dict())
   sort!(edges, rev=true, lt=edge_comp)
   return edges
 end
+
+function part2is_samecluster(part)
+  node_num = sum(length.(part))
+  samecluster = Dict([i => Dict([j => 0 for j in i+1:node_num]) for i in 1:node_num])
+
+  for cluster in part
+    for n1 in cluster
+      for n2 in cluster
+        if n2 <= n1 continue end
+        samecluster[n1][n2] = true
+      end
+    end
+  end
+
+  samecluster = [samecluster[i][j] for i in 1:node_num for j in i+1:node_num]
+  return samecluster
+end
+
 
 # 何番目にnoise nodeが追加されたか
 function noise_order(edges, noise_indexes)
@@ -359,6 +355,83 @@ function disp_cluster_bias(p)
   Plots.pie(length.(p), label="")
 end
 
+function h2correlation(h::Hypergraph, f1, f2)
+  okapi_e = build_bg(h, f1)
+  tfidf_e = build_bg(h, f2)
+
+  rank1 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
+  rank2 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
+  for (i, e) in enumerate(okapi_e)
+    rank1[e.from][e.to-nhv(h)] = i
+  end
+
+  for (i, e) in enumerate(tfidf_e)
+    rank2[e.from][e.to-nhv(h)] = i
+  end
+
+  arr1 = Array{Int64}([])
+  arr2 = Array{Int64}([])
+  @showprogress 1 "computing..." for node in 1:nhv(h)
+    for he in 1:nhe(h)
+      if rank1[node][he] != 0 push!(arr1, rank1[node][he]::Int64) end
+      if rank2[node][he] != 0 push!(arr2, rank2[node][he]::Int64) end
+    end
+  end
+
+  return (arr1, arr2)
+end
+
+# Or later, feature functoins
+function gini(h::Hypergraph, cluster_dict)
+  k = 0
+  sum = 0
+  for (key, val) in cluster_dict
+    k += val
+    sum += key * val
+  end
+  if k == 1 return (1, 1) end
+
+  gini = 0
+
+  for (i, val1) in cluster_dict
+    for (j, val2) in cluster_dict
+      gini += abs(i - j) * (val1 * val2)
+    end
+  end
+  gini /= 2
+
+  gini = (gini / binomial(k, 2)) / (sum / k)
+  gini /= 2
+
+  return (gini, k)
+end
+
+function gini2(h::Hypergraph, cluster_dict)
+  k = 0
+  sum = 0
+
+  for (key, val) in cluster_dict
+    if(key == 1) continue end
+    k += val
+    sum += key * val
+  end
+  if k <= 1 return (1, 1) end
+
+  gini = 0
+
+  for (i, val1) in cluster_dict
+    for (j, val2) in cluster_dict
+      if(i == 1 || j == 1) continue end
+      gini += abs(i - j) * (val1 * val2)
+    end
+  end
+  gini /= 2
+
+  gini = (gini / binomial(k, 2)) / (sum / k)
+  gini /= 2
+
+  return (gini, k)
+end
 # function testmod(h::Hypergraph, method::CFModularityCNMLike, fx)
 #     ha = HypergraphAggs(h)
 #     best_modularity = 0

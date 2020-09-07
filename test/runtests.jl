@@ -16,13 +16,12 @@ h[6, 9] = 1
 
 @testset "Clustering algorithm" begin
   @testset "h_HCBE method" begin
-    ms, ph, bp, ufh, scores = HCBE.h_HCBE(h, n_cluster=1)
+    ms, p, ufh= HCBE.h_HCBE(h, n_cluster=1)
     @test ms == zeros(length(ms))
-    @test ph[end] == [Set{Int64}(1:nhv(h))]
-    @test length(ph[end]) == 1
-    ms, ph, bp, ufh, scores = HCBE.h_HCBE(h, n_cluster=3)
-    @test length(ph[end]) == 3
-    ms, ph, bp, ufh, scores = HCBE.h_HCBE(h, n_cluster=3, freq=1)
+    @test p == [Set{Int64}(1:nhv(h))]
+    ms, p, ufh = HCBE.h_HCBE(h, n_cluster=3)
+    @test length(p) == 3
+    ms, ph, bp, ufh = HCBE.h_HCBE(h, n_cluster=3, freq=1)
     @test ms != zeros(length(ms))
   end
 
