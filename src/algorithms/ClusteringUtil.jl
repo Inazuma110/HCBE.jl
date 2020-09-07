@@ -42,10 +42,9 @@ Compute the clustering result from the disjoint set.
 **Arguments**
 
 * uf : The disjoint set obtained by clustering.
-* to : Disjoint sets up to A are used.
-For example, if you want to get a vertex-only clustering result,
+* to : Disjoint sets up to `to` are used. For example, if you want to get a vertex-only clustering result,
 specify the number of vertices.
-* from : Use a disjoint set from A.
+* from : Use a disjoint set from `from`.
 """
 function partition(uf::UnionFind{Int64},
                    to::Int=length(uf.parent),

@@ -1,5 +1,22 @@
 include("./Unionfind.jl")
 
+"""
+  h_HCBE(h::Hypergraph,
+        n_cluster::Int=1,
+        modularity_f=modularity,
+        weight_f::Function=tfidf,
+        freq::Int=Inf)
+
+Clustering the vertices of the `h` using hard-Hypergraph Clustering based on Bipartite Expansion.
+
+**Arguments**
+
+* h : Clustered hypergraph.
+* n_cluster : When the number of clusters reaches `n_cluster`, the clustering process is terminated.
+* modularity_f : Modularity function.
+* weighted_f : Bipartite graph edge weighting function.
+* freq : Once every `freq` times, the modularity is calculated.
+"""
 function h_HCBE(h::Hypergraph;
                 n_cluster::Int=1,
                 modularity_f=modularity,
@@ -60,6 +77,23 @@ function h_HCBE(h::Hypergraph;
   else return ms, partition(uf, nhv(h)), ufh end
 end
 
+"""
+  s_HCBE(h::Hypergraph,
+        n_cluster::Int=1,
+        modularity_f=modularity,
+        weight_f::Function=tfidf,
+        freq::Int=Inf)
+
+Clustering the vertices of the `h` using soft-Hypergraph Clustering based on Bipartite Expansion.
+
+**Arguments**
+
+* h : Clustered hypergraph.
+* n_cluster : When the number of clusters reaches `n_cluster`, the clustering process is terminated.
+* modularity_f : Modularity function.
+* weighted_f : Bipartite graph edge weighting function.
+* freq : Once every `freq` times, the modularity is calculated.
+"""
 function s_HCBE(h::Hypergraph;
                 n_cluster=1,
                 modularity_f=modularity,
@@ -102,8 +136,8 @@ function s_HCBE(h::Hypergraph;
       # heのルートがnodeなら
       if he_root <= nhv(h) cluster_num -= 1 end
 
+      ep = partition(uf, length(uf.parent), nhv(h)+1)
       if step % freq == 0
-        ep = partition(uf, length(uf.parent), nhv(h)+1)
         # m = modularity(h, epart2cluster(h, ep))
         if m > best_m
           best_m = m
@@ -119,7 +153,8 @@ function s_HCBE(h::Hypergraph;
     if length(ep) <= n_cluster break end
   end
 
-  return ms, epart_hist, bcn, uf
+  p = epart2cluster(h, ep)
+  return ms, p, bcn, uf
 end
 
 # Or later, beta function.

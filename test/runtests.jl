@@ -27,10 +27,9 @@ h[6, 9] = 1
 
   @testset "s_HCBE method" begin
     ms, eph, bcn, uf = HCBE.s_HCBE(h, n_cluster=1)
-    @test eph[end] == [Set{Int64}(nhv(h)+1:nhe(h)+nhv(h))]
-    @test length(eph[end]) == 1
+    @test length(eph) == 1
     ms, eph, bcn, uf = HCBE.s_HCBE(h, n_cluster=3)
-    @test length(eph[end]) == 3
+    @test length(eph) == 3
   end
 end
 
