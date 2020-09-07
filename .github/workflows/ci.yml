@@ -35,8 +35,7 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
-      - run:
-        pip3 install matplotlib
+      - run: pip3 install matplotlib
       - uses: julia-actions/julia-runtest@latest
   docs:
     name: Documentation
