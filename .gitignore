@@ -13,3 +13,4 @@ dataset/*
 *.json
 *.csv
 jl/data/*
+*Manifest.toml
