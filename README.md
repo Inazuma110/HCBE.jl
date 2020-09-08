@@ -1,3 +1,6 @@
+[![GitHub license](https://img.shields.io/github/license/Inazuma110/HCBE.jl)](https://github.com/Inazuma110/HCBE.jl/blob/master/LICENSE)
+![CI](https://github.com/Inazuma110/HCBE.jl/workflows/CI/badge.svg)
+
 # HCBE
 
 ## Overview
