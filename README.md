@@ -13,5 +13,22 @@ For more details on the algorithm, please refer to the following paper.
 
 An English paper summarizing these three papers will be published at iiWAS2020.
 
+## Install
+```sh
+(REPL)]add https://github.com/Inazuma110/HCBE.jl
+```
+or
+```jl
+using Pkg
+Pkg.add(https://github.com/Inazuma110/HCBE.jl)
+```
+
 ## Documentation
 [Latest documentation](https://inazuma110.github.io/HCBE.jl/dev/)
+
+## See Also
+Julia packages providing other clustering methods:
+
+- [Clustering.jl](https://github.com/JuliaStats/Clustering.jl)
+- [QuickShiftClustering.jl](https://github.com/rened/QuickShiftClustering.jl)
+- [SpectralClustering.jl](https://github.com/lucianolorenti/SpectralClustering.jl)
