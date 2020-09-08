@@ -20,7 +20,7 @@ An English paper summarizing these three papers will be published at iiWAS2020.
 or
 ```jl
 using Pkg
-Pkg.add(https://github.com/Inazuma110/HCBE.jl)
+Pkg.add(url="https://github.com/Inazuma110/HCBE.jl")
 ```
 
 ## Documentation
