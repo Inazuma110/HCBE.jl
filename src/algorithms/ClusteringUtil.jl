@@ -153,24 +153,6 @@ function build_bg(h::Hypergraph, weighted_f=tfidf, params=Dict())
   return edges
 end
 
-function part2is_samecluster(part)
-  node_num = sum(length.(part))
-  samecluster = Dict([i => Dict([j => 0 for j in i+1:node_num]) for i in 1:node_num])
-
-  for cluster in part
-    for n1 in cluster
-      for n2 in cluster
-        if n2 <= n1 continue end
-        samecluster[n1][n2] = true
-      end
-    end
-  end
-
-  samecluster = [samecluster[i][j] for i in 1:node_num for j in i+1:node_num]
-  return samecluster
-end
-
-
 # 何番目にnoise nodeが追加されたか
 function noise_order(edges, noise_indexes)
   orders = []
@@ -183,14 +165,13 @@ function noise_order(edges, noise_indexes)
   return orders
 end
 
-
 function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
   pyplot()
   bg = build_bg(h, weighted_f, params)
   plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
   maxw = maximum([i.weight for i in bg])
   minw = minimum([i.weight for i in bg])
-  f(w) = sqrt((w-minw) / (maxw-minw))
+  f(w) = 1-sqrt((w-minw) / (maxw-minw))
   color = [RGB(f(i.weight), f(i.weight), f(i.weight)) for i in bg]
   # color = [RGB(0, f(i.weight), 1.) for i in bg]
   return Plots.scatter(
@@ -226,12 +207,6 @@ function plot_incidence2(h::Hypergraph, arr)
                 ylabel="node",
                 label="",
                )
-end
-
-function scoring(tr_part, pred_part, scoring_f)
-  act_sc = part2is_samecluster(tr_part)
-  pred_sc = part2is_samecluster(pred_part)
-  return scoring_f(act_sc, pred_sc)
 end
 
 function curve(h::Hypergraph, f1, f2, similar_f=f1_score, params1=Dict(), params2=Dict())

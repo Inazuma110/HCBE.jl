@@ -17,6 +17,7 @@ Clustering the vertices of the `h` using hard-Hypergraph Clustering based on Bip
 * weighted_f : Bipartite graph edge weighting function.
 * freq : Once every `freq` times, the modularity is calculated.
 """
+
 function h_HCBE(h::Hypergraph;
                 n_cluster::Int=1,
                 modularity_f=modularity,
