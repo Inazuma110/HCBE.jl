@@ -124,12 +124,12 @@ function my_mod(h::Hypergraph, part)
 end
 
 """
-  build_bg(h::Hypergraph, weighted_f::Function=tfidf, param=Dict())
+  star_expansion(h::Hypergraph, weighted_f::Function=tfidf, param=Dict())
 
-Star expand `h` and construct a bipartite graph. Each edge is weighted by `weighted_f`.
+Star expandion `h` and construct a bipartite graph. Each edge is weighted by `weighted_f`.
 """
-function build_bg(h::Hypergraph, weighted_f=tfidf, params=Dict())
-  edges = Set()
+function star_expansion(h::Hypergraph, weighted_f=tfidf, params=Dict())::Array{edge}
+  edges::Array{edge} = []
   params["dl_ave"] = 0
 
   for he in 1:nhe(h)
@@ -148,7 +148,7 @@ function build_bg(h::Hypergraph, weighted_f=tfidf, params=Dict())
       id += 1
     end
   end
-  edges = [i for i in edges]
+  # edges = [i for i in edges]
   sort!(edges, rev=true, lt=edge_comp)
   return edges
 end
@@ -167,7 +167,7 @@ end
 
 function plot_incidence(h::Hypergraph, name="", weighted_f=tfidf, params=Dict())
   pyplot()
-  bg = build_bg(h, weighted_f, params)
+  bg = star_expansion(h, weighted_f, params)
   plot_arr::Array{Tuple{Int64, Int64}} = [(i.to-nhv(h), i.from) for i in bg]
   maxw = maximum([i.weight for i in bg])
   minw = minimum([i.weight for i in bg])
@@ -210,8 +210,8 @@ function plot_incidence2(h::Hypergraph, arr)
 end
 
 function curve(h::Hypergraph, f1, f2, similar_f=f1_score, params1=Dict(), params2=Dict())
-  bg1 = build_bg(h, f1, params1)
-  bg2 = build_bg(h, f2, params2)
+  bg1 = star_expansion(h, f1, params1)
+  bg2 = star_expansion(h, f2, params2)
   # bg1 = map(i->i.id, bg1[1:Int(floor(length(bg1)/100)):end])
   # bg2 = map(i->i.id, bg2[1:Int(floor(length(bg1)/100)):end])
   bg1 = map(i->i.id, bg1)
@@ -273,7 +273,7 @@ function epart2probdist(h::Hypergraph, uf, p; weighted_f=tfidf, params=Dict())
   for i in nhv(h)+1:nhv(h)+nhe(h) push!(cluster_set, root(uf, i)) end
   cluster_nums = Dict([val => i for (i, val) in enumerate(cluster_set)])
   entropies = Dict([i => [.0 for j in 1:length(cluster_nums)] for i in 1:nhv(h)])
-  bg = build_bg(h, weighted_f)
+  bg = star_expansion(h, weighted_f)
   @showprogress 1 "computing.." for e in bg
     cluster_num = cluster_nums[root(uf, e.to)]
     entropies[e.from][cluster_num] += e.weight
@@ -305,36 +305,37 @@ function prob_dist2part(prob_dists, threshold=0.5)
   return part
 end
 
-function cluster_visualization(h::Hypergraph, p)
-  colors = ["red" "blue" "yellow" "green" "brown" "cyan" "magenta" "pink" "white" "gray" ]
-  ec = ["gray" for i in nhe(h)]
-  c = ["" for i in 1:nhv(h)]
-  sort!(p, rev=true, by=i->length(i))
-
-  for (i, cluster) in enumerate(p)
-    for node in cluster
-      c[node] = length(cluster) == 1 ? "black" : colors[i]
-    end
-  end
-
-  SimpleHypergraphs.draw(h,
-                         HyperNetX,
-                         nodes_kwargs=Dict(["facecolors"=>c]),
-                         edges_kwargs=Dict(["edgecolors"=>ec]),
-                         layout_kwargs=Dict(["seed"=>0]),
-                         # with_node_labels=false
-                        )
-
-  return c
-end
+# function cluster_visualization(h::Hypergraph, p)
+#   colors = ["red" "blue" "yellow" "green" "brown" "cyan" "magenta" "pink" "white" "gray" ]
+#   ec = ["gray" for i in nhe(h)]
+#   c = ["" for i in 1:nhv(h)]
+#   sort!(p, rev=true, by=i->length(i))
+#
+#   for (i, cluster) in enumerate(p)
+#     for node in cluster
+#       c[node] = length(cluster) == 1 ? "black" : colors[i]
+#     end
+#   end
+#
+#   SimpleHypergraphs.draw(h,
+#                          HyperNetX,
+#                          nodes_kwargs=Dict(["facecolors"=>c]),
+#                          edges_kwargs=Dict(["edgecolors"=>ec]),
+#                          layout_kwargs=Dict(["seed"=>0]),
+#                          with_node_labels=false,
+#                          with_edge_labels=false,
+#                         )
+#
+#   return c
+# end
 
 function disp_cluster_bias(p)
   Plots.pie(length.(p), label="")
 end
 
 function h2correlation(h::Hypergraph, f1, f2)
-  okapi_e = build_bg(h, f1)
-  tfidf_e = build_bg(h, f2)
+  okapi_e = star_expansion(h, f1)
+  tfidf_e = star_expansion(h, f2)
 
   rank1 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
   rank2 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
