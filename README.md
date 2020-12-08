@@ -10,8 +10,8 @@ For more details on the algorithm, please refer to the following paper.
 - [エッジ追加に基づくハイパーグラフクラスタリングの特性評価](https://www.jstage.jst.go.jp/article/pjsai/JSAI2020/0/JSAI2020_2P5GS305/_article/-char/ja/)
 - [ハイパーグラフクラスタリングにおけるエッジ追加順序の比較](https://www.ipsj.or.jp/event/fit/fit2020/FIT2020_program/data/html/abstract/D-004.html)
 - [スター展開を利用したハイパーグラフのソフトクラスタリング](https://jsai.ixsq.nii.ac.jp/ej/index.php?active_action=repository_view_main_item_snippet&page_id=13&block_id=23&pn=1&count=20&order=16&lang=japanese&creator=ito%20shuta)
+- [Fast Clustering of HypergraphsBased on Bipartite-Edge Restoration and Node Reachability](http://www.iiwas.org/conferences/momm2020/proceedings/iiwas-papers/p115-ito.pdf)
 
-An English paper summarizing these three papers will be published at iiWAS2020.
 
 ## Install
 ```sh
