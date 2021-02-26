@@ -23,13 +23,11 @@ function h_HCBE(h::Hypergraph;
                 modularity_f=modularity,
                 weighted_f=tfidf,
                 params=Dict(),
-                freq=Inf)
+                freq=Inf,
+  )
   uf = UnionFind(nhv(h)+nhe(h))
-  m = 0
   best_m = 0
-  ms = []
   best_part = []
-  part_hist = []
   cluster_num = nhv(h)
   ufh = []
   dl_ave = 0
@@ -57,25 +55,17 @@ function h_HCBE(h::Hypergraph;
       # heのルートがnodeなら
       if he_root <= nhv(h) cluster_num -= 1 end
 
-      if freq != Inf p = partition(uf, nhv(h)) end
       if step % freq == 0
-        m = modularity_f(h, p)
-        if m > best_m
-          best_part = p
-          bcn = cluster_num
-        end
+        push!(ufh, deepcopy(uf))
       end
     end
 
-    push!(ms, m)
-    push!(part_hist, p)
-    push!(ufh, copy(uf.parent))
 
     if cluster_num <= n_cluster break end
   end
 
-  if freq != Inf return ms, part_hist, best_part, ufh
-  else return ms, partition(uf, nhv(h)), ufh end
+  if freq != Inf return best_part, ufh
+  else return partition(uf, nhv(h)), ufh end
 end
 
 """

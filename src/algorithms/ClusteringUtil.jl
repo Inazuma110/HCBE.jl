@@ -108,6 +108,10 @@ function my_mod(h::Hypergraph, part)
 
   for he_i in 1:nhe(h)
     he = [k for (k, v) in getvertices(h, he_i)]
+    if length(he) == 0
+      error("There are hypernodes that are not included in the hyperedge.")
+      exit(1)
+    end
     flag = true
     fnode_cluster = n2c[he[1]]
     for node in he
