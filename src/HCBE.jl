@@ -1,5 +1,5 @@
 module HCBE
-using SimpleHypergraphs, Random,  ProgressBars, LightGraphs, ProgressMeter, GraphPlot, StatsBase, JSON, StatsPlots
+using SimpleHypergraphs, Random,  ProgressBars, LightGraphs, ProgressMeter, GraphPlot, StatsBase, JSON, StatsPlots, LinearAlgebra, Distributions
 
 include("./algorithms/HypergraphClustering.jl")
 include("./algorithms/Weighted.jl")

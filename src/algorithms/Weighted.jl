@@ -58,3 +58,16 @@ function random_weight(h::Hypergraph=1, he=1, node=1, dl_ave=1)::Float64
   return rand(1)[1]
 end
 
+function bi_mod(h::Hypergraph, he::Int, node::Int, params=Dict())::Float64
+  kᵥ = length(gethyperedges(h, node))
+  dᵤ = length(getvertices(h, he))
+  m = sum(length.(gethyperedges.(Ref(h), 1:nhv(h))))
+  # println(kᵥ, ' ' , dᵤ, ' ', m)
+  return h[node, he] - (kᵥ * dᵤ / m)
+end
+
+function hypersphere_dot(h::Hypergraph, he::Int, node::Int, params=Dict())::Float64
+  @assert haskey(params, "X") "`params` dosent have `X`"
+  @assert haskey(params, "Y") "`params` dosent have `Y`"
+  return dot(params["X"][:, he], params["Y"][:, node])
+end

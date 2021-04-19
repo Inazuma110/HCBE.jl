@@ -23,7 +23,8 @@ function h_HCBE(h::Hypergraph;
                 modularity_f=modularity,
                 weighted_f=tfidf,
                 params=Dict(),
-                freq=Inf,
+                freq=1,
+                with_modularity=false
   )
   uf = UnionFind(nhv(h)+nhe(h))
   best_m = 0
@@ -42,7 +43,7 @@ function h_HCBE(h::Hypergraph;
   ep = Set.(nhv(h)+1:nhv(h)+nhe(h))
   bcn = -1
 
-  @showprogress 1 "computing..." for (step, edge) in (enumerate(edges))
+  @showprogress 1 "restoring..." for (step, edge) in (enumerate(edges))
     node = edge.from
     he = edge.to
     weight = edge.weight
@@ -146,4 +147,63 @@ function s_HCBE(h::Hypergraph;
 
   p = epart2cluster(h, ep)
   return ms, p, bcn, uf
+end
+
+"""
+  hs_clustering(h::Hypergraph, dims=
+
+  O(Sd(N+M))
+"""
+function hs_clustering(h::Hypergraph, dims=2, epoch=100)
+  @assert length(get_connected_components(h)) == 1 "Not Connected."
+  N = nhv(h)
+  M = nhe(h)
+  Random.seed!(1)
+  X=rand(Uniform(-1, 1), dims, M)
+  Random.seed!(1)
+  Y=rand(Uniform(-1, 1), dims, N)
+  foreach(normalize!, eachcol(X))
+  foreach(normalize!, eachcol(Y))
+  old_sum_dot = Inf
+  l = []
+
+  for e in 1:epoch
+    for d in 1:dims Y[d, :] .-= mean(Y[d, :]) end
+    X_new = zeros(dims, M)
+    for he in 1:M
+      hns = keys(getvertices(h, he))
+      gᵣ = length(hns)
+      for hn in hns
+        dᵥ = length(gethyperedges(h, hn))
+        X_new[:, he] += Y[:, hn]
+      end
+    end
+    for d in 1:dims X_new[d, :] .-= mean(X_new[d, :]) end
+    new_sum_dot = sum(dot.(eachcol(X), eachcol(X_new)))
+    foreach(normalize!, eachcol(X_new))
+    X = deepcopy(X_new)
+
+    for d in 1:dims X[d, :] .-= mean(X[d, :]) end
+    Y_new = zeros(dims, N)
+    for hn in 1:N
+      hes = keys(gethyperedges(h, hn))
+      dᵥ = length(hes)
+      for he in hes
+        gᵣ = length(getvertices(h, he))
+        Y_new[:, hn] += X[:, he]
+      end
+    end
+    for d in 1:dims Y_new[d, :] .-= mean(Y_new[d, :]) end
+    foreach(normalize!, eachcol(Y_new))
+    Y = deepcopy(Y_new)
+
+    push!(l, abs(new_sum_dot - old_sum_dot))
+    if abs(new_sum_dot - old_sum_dot) < 1e-8
+      println(e)
+      break
+    end
+    old_sum_dot = new_sum_dot
+  end
+
+  return X, Y
 end

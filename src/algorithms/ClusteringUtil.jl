@@ -132,7 +132,7 @@ end
 
 Star expandion `h` and construct a bipartite graph. Each edge is weighted by `weighted_f`.
 """
-function star_expansion(h::Hypergraph, weighted_f=tfidf, params=Dict())::Array{edge}
+function star_expansion(h::Hypergraph, weighted_f=tfidf, params=Dict(); is_rev=true)::Array{edge}
   edges::Array{edge} = []
   params["dl_ave"] = 0
 
@@ -142,7 +142,7 @@ function star_expansion(h::Hypergraph, weighted_f=tfidf, params=Dict())::Array{e
   params["dl_ave"] /= nhe(h)
 
   id = 1
-  @showprogress 1 "computing..." for node in (1:nhv(h))
+  @showprogress 1 "star expansion" for node in (1:nhv(h))
     hes = gethyperedges(h, node)
     hes = [key for (key, val) in hes]
     for he in hes
@@ -153,7 +153,7 @@ function star_expansion(h::Hypergraph, weighted_f=tfidf, params=Dict())::Array{e
     end
   end
   # edges = [i for i in edges]
-  sort!(edges, rev=true, lt=edge_comp)
+  sort!(edges, rev=is_rev, lt=edge_comp)
   return edges
 end
 
@@ -237,25 +237,6 @@ function curve(h::Hypergraph, f1, f2, similar_f=f1_score, params1=Dict(), params
   return res
 end
 
-function disp_basic(h::Hypergraph)
-  node_degree_dist = [0 for i in 1:nhe(h)]
-  he_degree_dist = [0 for i in 1:nhv(h)]
-  for node in 1:nhv(h)
-    size = length(gethyperedges(h, node))
-    node_degree_dist[size] += 1
-  end
-  for he in 1:nhe(h)
-    size = length(getvertices(h, he))
-    he_degree_dist[size] += 1
-  end
-  # println(node_degree_dist)
-  # println(he_degree_dist)
-  p = Plots.bar(node_degree_dist, show=true)
-  display(p)
-  p = Plots.bar(he_degree_dist, show=true)
-  display(p)
-end
-
 """
   epart2cluster(h::Hypergraph, epart::Array{Set{Int}})
 
@@ -333,13 +314,9 @@ end
 #   return c
 # end
 
-function disp_cluster_bias(p)
-  Plots.pie(length.(p), label="")
-end
-
-function h2correlation(h::Hypergraph, f1, f2)
-  okapi_e = star_expansion(h, f1)
-  tfidf_e = star_expansion(h, f2)
+function h2correlation(h::Hypergraph, f1, f2; params1=Dict(), params2=Dict())
+  okapi_e = star_expansion(h, f1, params1)
+  tfidf_e = star_expansion(h, f2, params2)
 
   rank1 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
   rank2 = Dict([i => Dict([j => 0 for j in 1:nhe(h)]) for i in 1:nhv(h)])
@@ -362,89 +339,3 @@ function h2correlation(h::Hypergraph, f1, f2)
 
   return (arr1, arr2)
 end
-
-# Or later, feature functoins
-function gini(h::Hypergraph, cluster_dict)
-  k = 0
-  sum = 0
-  for (key, val) in cluster_dict
-    k += val
-    sum += key * val
-  end
-  if k == 1 return (1, 1) end
-
-  gini = 0
-
-  for (i, val1) in cluster_dict
-    for (j, val2) in cluster_dict
-      gini += abs(i - j) * (val1 * val2)
-    end
-  end
-  gini /= 2
-
-  gini = (gini / binomial(k, 2)) / (sum / k)
-  gini /= 2
-
-  return (gini, k)
-end
-
-function gini2(h::Hypergraph, cluster_dict)
-  k = 0
-  sum = 0
-
-  for (key, val) in cluster_dict
-    if(key == 1) continue end
-    k += val
-    sum += key * val
-  end
-  if k <= 1 return (1, 1) end
-
-  gini = 0
-
-  for (i, val1) in cluster_dict
-    for (j, val2) in cluster_dict
-      if(i == 1 || j == 1) continue end
-      gini += abs(i - j) * (val1 * val2)
-    end
-  end
-  gini /= 2
-
-  gini = (gini / binomial(k, 2)) / (sum / k)
-  gini /= 2
-
-  return (gini, k)
-end
-# function testmod(h::Hypergraph, method::CFModularityCNMLike, fx)
-#     ha = HypergraphAggs(h)
-#     best_modularity = 0
-#     comms = [Set(i) for i in 1:nhv(h)]
-#     mod_history = Vector{Float64}(undef, method.reps)
-#     for rep in 1:method.reps
-#         he = rand(1:nhe(h))
-#         vers = collect(keys(getvertices(h, he)))
-#         if length(vers) == 0
-#             continue
-#         end;
-#         c = deepcopy(comms)
-#         i0 = fx(c, vers)
-#         max_i = length(c)
-#         i_cur = i0
-#         while i_cur < max_i
-#             i_cur += 1
-#             if length(intersect(c[i_cur],vers)) > 0
-#                 union!(c[i0], c[i_cur])
-#                 c[i_cur]=c[max_i]
-#                 max_i += -1
-#             end
-#                 println(c)
-#         end
-#         resize!(c,max_i)
-#         m = my_mod(h, c)
-#         if m > best_modularity
-#             best_modularity = m
-#             comms = c
-#         end
-#         mod_history[rep] = best_modularity
-#     end
-#     return (bm=best_modularity, bp=comms, mod_history=mod_history)
-# end
